@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PPL • Трекер прогрессии</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            base: {
+              bg: '#121316',
+              card: '#191B20',
+              elevated: '#1F2229',
+              border: '#272A32',
+              borderSoft: '#22252C',
+            },
+            muted: {
+              steel: '#6B8CAE',
+              steelBg: 'rgba(107, 140, 174, 0.14)',
+              steelBorder: 'rgba(107, 140, 174, 0.34)',
+              sage: '#6E8F7A',
+              sageBg: 'rgba(110, 143, 122, 0.14)',
+              sageBorder: 'rgba(110, 143, 122, 0.34)',
+              ochre: '#A68E68',
+              ochreBg: 'rgba(166, 142, 104, 0.14)',
+              ochreBorder: 'rgba(166, 142, 104, 0.34)',
+            },
+            ink: {
+              primary: '#D8DCE3',
+              secondary: '#868D9B',
+              dim: '#5C6370',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Полный запрет случайного выделения текста при скролле и касаниях */
+    * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    /* Ввод разрешён исключительно в поле рабочего веса */
+    input.weight-input {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+
+    html, body {
+      background-color: #121316;
+      color: #D8DCE3;
+      overscroll-behavior-y: contain;
+      scroll-behavior: smooth;
+    }
+
+    .accordion-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.2s ease-out;
+    }
+    .accordion-content.open {
+      grid-template-rows: 1fr;
+    }
+    .accordion-inner {
+      overflow: hidden;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+  <!-- Главный контейнер -->
+  <div class="max-w-[540px] mx-auto min-h-screen flex flex-col pb-24">
+
+    <!-- Липкая верхняя панель -->
+    <header class="sticky top-0 z-30 bg-base-bg/95 backdrop-blur-md border-b border-base-border px-3.5 pt-3 pb-3">
+      <!-- Заголовок и статус автосохранения -->
+      <div class="flex items-center justify-between gap-2 mb-2.5">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-ink-primary">PPL • 3 дня в неделю</h1>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted-steelBg text-muted-steel border border-muted-steelBorder">
+              Двойная прогрессия
+            </span>
+          </div>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-[11px] text-ink-secondary">25 рабочих подходов</span>
+            <span class="text-ink-dim">•</span>
+            <span id="saveStatus" class="text-[11px] text-muted-sage flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-muted-sage"></span>
+              <span>Сохранено</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Кнопка памятки -->
+        <button
+          id="toggleGuideBtn"
+          type="button"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-base-card hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-medium text-ink-secondary transition"
+          aria-expanded="false"
+        >
+          <svg class="w-3.5 h-3.5 text-muted-ochre shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Памятка</span>
+        </button>
+      </div>
+
+      <!-- Сворачиваемая памятка -->
+      <div id="guidePanel" class="accordion-content">
+        <div class="accordion-inner">
+          <div class="mb-3 p-3 rounded-2xl bg-base-card border border-base-border text-xs leading-relaxed text-ink-secondary space-y-2">
+            <div>
+              <span class="font-semibold text-ink-primary">Двойная прогрессия:</span>
+              Начинай цикл с нижней границы повторений (Нед. 1) и каждую неделю повышай результат по матрице. После закрытия верхней границы (Нед. 5) верни переключатель на Нед. 1 и увеличь вес на <span class="text-muted-sage font-semibold">+2.5 кг</span> или 1 плитку.
+            </div>
+            <div class="pt-1.5 border-t border-base-borderSoft">
+              <span class="font-semibold text-ink-primary">Отдых:</span>
+              2–4 мин перед базой (включая 1–2 лёгких разминочных подхода); 1.5–2 мин между изолирующими упражнениями.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Вкладки 3 дней -->
+      <div id="dayTabs" class="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-base-card border border-base-border mb-2.5" role="tablist"></div>
+
+      <!-- Переключатель недели (5 взаимоисключающих радио-кнопок) -->
+      <div>
+        <div class="flex items-center justify-between text-[11px] text-ink-secondary px-1 mb-1">
+          <span>Активная неделя дня:</span>
+          <span id="activeWeekSummary" class="font-semibold text-muted-steel">Неделя 1</span>
+        </div>
+        <div id="weekSelector" class="grid grid-cols-5 gap-1.5" role="radiogroup" aria-label="Выбор недели прогрессии"></div>
+      </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="flex-1 px-3.5 pt-3.5 space-y-3">
+
+      <!-- Баннер дня и счётчик прогресса -->
+      <div class="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl bg-base-card border border-base-border">
+        <div class="min-w-0">
+          <h2 id="dayTitle" class="text-xs sm:text-sm font-bold text-ink-primary truncate"></h2>
+          <p id="daySubtitle" class="text-[11px] text-ink-secondary truncate mt-0.5"></p>
+        </div>
+        <div class="shrink-0 bg-base-bg px-2.5 py-1.5 rounded-xl border border-base-border text-right">
+          <div class="text-[10px] text-ink-secondary leading-none">Выполнено</div>
+          <div id="dayProgressText" class="text-xs font-mono font-bold text-muted-sage mt-0.5">0 / 7</div>
+        </div>
+      </div>
+
+      <!-- Карточки упражнений -->
+      <div id="exerciseList" class="space-y-2.5"></div>
+
+      <!-- Компактная матрица недель дня -->
+      <section class="mt-5 rounded-2xl bg-base-card border border-base-border overflow-hidden">
+        <div class="px-3.5 py-2.5 bg-base-elevated/60 border-b border-base-border flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ink-primary">Матрица недель дня</h3>
+            <p class="text-[11px] text-ink-secondary">Сверху неделя • Слева номер упражнения</p>
+          </div>
+          <span id="matrixTotalSets" class="text-[11px] font-medium px-2 py-0.5 rounded-lg bg-base-bg text-ink-secondary border border-base-border">
+            25 подх.
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-center border-collapse text-[11px]">
+            <thead>
+              <tr id="matrixHeadRow" class="bg-base-bg/70 text-ink-secondary border-b border-base-border"></tr>
+            </thead>
+            <tbody id="matrixBody" class="divide-y divide-base-borderSoft font-mono"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Управление тренировкой и резервные копии -->
+      <div class="pt-2 space-y-2">
+        <button
+          id="resetDoneBtn"
+          type="button"
+          class="w-full py-3 px-4 rounded-2xl bg-base-card hover:bg-base-elevated active:scale-[0.99] border border-base-border text-xs font-semibold text-ink-secondary flex items-center justify-center gap-2 transition"
+        >
+          <svg class="w-4 h-4 text-ink-dim" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Сбросить галочки тренировки</span>
+        </button>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            id="exportBackupBtn"
+            type="button"
+            class="py-2.5 px-3 rounded-2xl bg-base-card hover:bg-base-elevated active:scale-[0.99] border border-base-border text-[11px] font-medium text-ink-secondary flex items-center justify-center gap-1.5 transition"
+          >
+            <svg class="w-3.5 h-3.5 text-muted-steel" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Скачать бэкап</span>
+          </button>
+
+          <button
+            id="importBackupBtn"
+            type="button"
+            class="py-2.5 px-3 rounded-2xl bg-base-card hover:bg-base-elevated active:scale-[0.99] border border-base-border text-[11px] font-medium text-ink-secondary flex items-center justify-center gap-1.5 transition"
+          >
+            <svg class="w-3.5 h-3.5 text-muted-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span>Загрузить бэкап</span>
+          </button>
+          <input id="importFileInput" type="file" accept=".json,application/json" class="hidden" />
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Нижний беззвучный таймер отдыха -->
+  <div id="restTimerBar" class="fixed bottom-0 left-0 right-0 z-30 bg-base-card/95 backdrop-blur-md border-t border-base-border px-3.5 py-2.5">
+    <div class="max-w-[540px] mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <div id="timerDisplay" class="font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center transition-colors">
+          00:00
+        </div>
+        <span id="timerLabel" class="text-[11px] text-ink-secondary truncate">Отдых (без звука)</span>
+      </div>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" data-timer-sec="60" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">60с</button>
+        <button type="button" data-timer-sec="90" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">90с</button>
+        <button type="button" data-timer-sec="120" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">2м</button>
+        <button type="button" data-timer-sec="180" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">3м</button>
+        <button id="timerStopBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-base-elevated border border-base-border text-xs font-semibold text-ink-secondary active:scale-95 transition">Стоп</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Всплывающее уведомление -->
+  <div
+    id="toast"
+    class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-base-elevated border border-base-border text-xs font-medium text-ink-primary shadow-xl opacity-0 pointer-events-none transition-all duration-200 translate-y-2"
+  >
+    Готово
+  </div>
+
+  <script>
+    const PROGRAM_DATA = {
+      push: {
+        id: 'push',
+        tabLabel: '1 - Push (Пн)',
+        title: 'ДЕНЬ 1 — PUSH (ПН)',
+        subtitle: 'Грудь, Плечи, Трицепс • 25 подходов',
+        totalSets: 25,
+        exercises: [
+          {
+            num: 1,
+            name: 'Жим лёжа',
+            equipment: 'Машина Смита',
+            sets: 4,
+            rest: '2.5–3.5 мин',
+            muscles: 'Грудь (середина)',
+            technique: 'Базовое движение, опускание до лёгкого касания низа груди.',
+            weeks: ['6-6-6-6', '8-7-7-6', '9-9-8-8', '10-10-10-10 (пик)', '6-6-6-6 (+вес)']
+          },
+          {
+            num: 2,
+            name: 'Жим на наклонной скамье (30°)',
+            equipment: 'Машина Смита',
+            sets: 4,
+            rest: '2.5–3 мин',
+            muscles: 'Грудь (верх)',
+            technique: 'Угол скамьи 30°, акцент на верхнюю часть грудных.',
+            weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
+          },
+          {
+            num: 3,
+            name: 'Сведения рук (или «Бабочка»)',
+            equipment: 'Кроссовер',
+            sets: 3,
+            rest: '60–90 сек',
+            muscles: 'Грудь (изоляция)',
+            technique: 'Каретки на уровне плеч или выше, сводить локти, перехлёст ладоней в пике. Альтернатива: Pec Deck.',
+            weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
+          },
+          {
+            num: 4,
+            name: 'Жим на плечи сидя',
+            equipment: 'Тренажёр Хаммер',
+            sets: 4,
+            rest: '2–3 мин',
+            muscles: 'Передняя и средняя дельта',
+            technique: 'Параллельный хват (нейтральный) для защиты суставов.',
+            weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
+          },
+          {
+            num: 5,
+            name: 'Отведения рук в сторону одной рукой',
+            equipment: 'Нижний блок',
+            sets: 4,
+            rest: '60–90 сек',
+            muscles: 'Средняя дельта',
+            technique: 'Подъём до параллели с полом, плечо опущено; трос можно вести из-за спины для растяжения.',
+            weeks: ['12-12-12-12', '13-13-13-13', '14-14-14-14', '15-15-15-15 (пик)', '12-12-12-12 (+вес)']
+          },
+          {
+            num: 6,
+            name: 'Разгибания на трицепс с канатом',
+            equipment: 'Верхний блок',
+            sets: 3,
+            rest: '90 сек',
+            muscles: 'Трицепс (латеральная и медиальная головки)',
+            technique: 'Локти зафиксированы по бокам корпуса, разводить концы каната в нижней точке.',
+            weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
+          },
+          {
+            num: 7,
+            name: 'Разгибания на трицепс из-за головы с канатом',
+            equipment: 'Блок + канат',
+            sets: 3,
+            rest: '90 сек',
+            muscles: 'Трицепс (длинная головка)',
+            technique: 'Максимальное растяжение трицепса в нижней фазе, контролируемый темп.',
+            weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
+          }
+        ]
+      },
+      pull: {
+        id: 'pull',
+        tabLabel: '2 - Pull (Ср)',
+        title: 'ДЕНЬ 2 — PULL (СР)',
+        subtitle: 'Спина, Задняя дельта, Бицепс • 25 подходов',
+        totalSets: 25,
+        exercises: [
+          {
+            num: 1,
+            name: 'Тяга верхнего блока широким хватом',
+            equipment: 'Верхний блок',
+            sets: 4,
+            rest: '2.5–3 мин',
+            muscles: 'Широчайшие (ширина спины)',
+            technique: 'Тянуть локтями вниз к поясу, без сильного отклонения корпуса назад.',
+            weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
+          },
+          {
+            num: 2,
+            name: 'Тяга в наклоне (или Хаммер с упором в грудь)',
+            equipment: 'Машина Смита',
+            sets: 4,
+            rest: '2.5–3 мин',
+            muscles: 'Верх и середина спины (толщина)',
+            technique: 'Наклон корпуса ~45°, тяга к низу живота. Альтернатива: Хаммер с упором в грудь.',
+            weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
+          },
+          {
+            num: 3,
+            name: 'Горизонтальная тяга сидя (V-рукоять)',
+            equipment: 'Горизонтальный блок',
+            sets: 3,
+            rest: '2 мин',
+            muscles: 'Середина спины, ромбовидные',
+            technique: 'Сводить лопатки в конечной точке, удерживать естественный прогиб в пояснице.',
+            weeks: ['10-10-10', '11-11-10', '12-11-11', '12-12-12 (пик)', '10-10-10 (+вес)']
+          },
+          {
+            num: 4,
+            name: 'Пуловер с канатной рукоятью',
+            equipment: 'Верхний блок',
+            sets: 3,
+            rest: '60–90 сек',
+            muscles: 'Широчайшие (изоляция)',
+            technique: 'Чуть согнутые локти, тяга дугой до бёдер с паузой в нижней точке.',
+            weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
+          },
+          {
+            num: 5,
+            name: 'Face Pulls (тяга каната к лицу)',
+            equipment: 'Верхний блок',
+            sets: 4,
+            rest: '60–90 сек',
+            muscles: 'Задняя дельта, трапеции, ротаторы плеча',
+            technique: 'Тянуть к уровню лба/переносицы, разводя кисти наружу (внешняя ротация плеча).',
+            weeks: ['12-12-12-12', '13-13-13-13', '14-14-14-14', '15-15-15-15 (пик)', '12-12-12-12 (+вес)']
+          },
+          {
+            num: 6,
+            name: 'Сгибания рук на бицепс',
+            equipment: 'Скамья Скотта',
+            sets: 4,
+            rest: '1.5–2 мин',
+            muscles: 'Бицепс (пик и короткая головка)',
+            technique: 'Полная амплитуда без отрыва трицепсов от подушки и резких бросков веса.',
+            weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
+          },
+          {
+            num: 7,
+            name: 'Сгибания рук на бицепс с прямой рукоятью',
+            equipment: 'Нижний блок',
+            sets: 3,
+            rest: '60–90 сек',
+            muscles: 'Бицепс (общий объём)',
+            technique: 'Постоянное натяжение троса во всей амплитуде, локти зафиксированы по бокам.',
+            weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
+          }
+        ]
+      },
+      legs: {
+        id: 'legs',
+        tabLabel: '3 - Legs (Пт)',
+        title: 'ДЕНЬ 3 — LEGS + ДОБИВКА БИЦЕПСА (ПТ)',
+        subtitle: 'Ноги, Пресс, Бицепс • 25 подходов',
+        totalSets: 25,
+        exercises: [
+          {
+            num: 1,
+            name: 'Приседания со штангой на спине',
+            equipment: 'Машина Смита',
+            sets: 4,
+            rest: '3–3.5 мин',
+            muscles: 'Квадрицепсы, ягодицы, приводящие',
+            technique: 'Главное базовое движение дня, глубина до параллели или чуть ниже.',
+            weeks: ['6-6-6-6', '8-7-7-6', '9-9-8-8', '10-10-10-10 (пик)', '6-6-6-6 (+вес)']
+          },
+          {
+            num: 2,
+            name: 'Румынская тяга (замена: гиперэкстензия 4×10–15 или +2–3 подхода сгибаний)',
+            equipment: 'Машина Смита',
+            sets: 4,
+            rest: '2.5–3 мин',
+            muscles: 'Бицепс бедра, ягодицы, разгибатели',
+            technique: 'Отводить таз назад на чуть согнутых коленях до растяжения задней поверхности. Замена: гиперэкстензия 4×10–15 или +2–3 подхода сгибаний.',
+            weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
+          },
+          {
+            num: 3,
+            name: 'Жим ногами (наклонный или горизонтальный)',
+            equipment: 'Платформа',
+            sets: 3,
+            rest: '2 мин',
+            muscles: 'Квадрицепсы, ягодицы',
+            technique: 'Не отрывать таз от спинки в нижней точке, не вставлять колени до щелчка вверху.',
+            weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
+          },
+          {
+            num: 4,
+            name: 'Разгибания ног сидя',
+            equipment: 'Тренажёр',
+            sets: 3,
+            rest: '90 сек',
+            muscles: 'Квадрицепсы (изоляция)',
+            technique: 'Пауза на 1 секунду в верхней точке пикового сокращения.',
+            weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
+          },
+          {
+            num: 5,
+            name: 'Сгибания ног лёжа / сидя',
+            equipment: 'Тренажёр',
+            sets: 3,
+            rest: '90 сек',
+            muscles: 'Бицепс бедра (изоляция)',
+            technique: 'Подконтрольное опускание веса (2–3 секунды), без инерции и отрыва таза.',
+            weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
+          },
+          {
+            num: 6,
+            name: 'Подъёмы на носки стоя',
+            equipment: 'Тренажёр / Смит',
+            sets: 3,
+            rest: '60–90 сек',
+            muscles: 'Икроножные мышцы',
+            technique: 'Пауза 1–2 секунды в нижней точке растяжения и в пике сокращения, без отскоков.',
+            weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
+          },
+          {
+            num: 7,
+            name: 'Скручивания в блоке',
+            equipment: 'Блок',
+            sets: 2,
+            rest: '60–90 сек',
+            muscles: 'Прямая мышца живота (пресс)',
+            technique: 'Тянуть локти и грудь к коленям за счёт округления спины (не наклоняться с прямой спиной), в нижней точке мощный выдох и пауза 1 сек.',
+            weeks: ['12-12', '15-14', '18-17', '20-20 (пик)', '12-12 (+вес)']
+          },
+          {
+            num: 8,
+            name: 'Добивка: молотковые сгибания с канатом',
+            equipment: 'Нижний блок',
+            sets: 3,
+            rest: '60–90 сек',
+            muscles: 'Бицепс, брахиалис, предплечья',
+            technique: 'Вторая стимуляция бицепса в неделю; при сильной усталости после ног допустимо пропустить.',
+            weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
+          }
+        ]
+      }
+    };
+
+    const WEEK_OPTIONS = [
+      { index: 0, short: 'Нед. 1', sub: 'старт', full: 'Неделя 1' },
+      { index: 1, short: 'Нед. 2', sub: '', full: 'Неделя 2' },
+      { index: 2, short: 'Нед. 3', sub: '', full: 'Неделя 3' },
+      { index: 3, short: 'Нед. 4', sub: '(пик)', full: 'Неделя 4 (пик)' },
+      { index: 4, short: 'Нед. 5', sub: '(+вес)', full: 'Неделя 5 (+вес)' }
+    ];
+
+    const STORAGE_KEY = 'ppl_tracker_state_v2';
+    const IDB_NAME = 'ppl_tracker_db';
+    const IDB_STORE = 'state_store';
+
+    let state = {
+      activeDay: 'push',
+      weeksByDay: { push: 0, pull: 0, legs: 0 },
+      weights: {},
+      prevWeights: {},
+      completed: {},
+      openDetails: {},
+      updatedAt: 0
+    };
+
+    // Двойное сохранение: localStorage + IndexedDB
+    function openIdb() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) return reject(new Error('No IDB'));
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveToIdb(payload) {
+      try {
+        const db = await openIdb();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).put(payload, 'current');
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (_) {}
+    }
+
+    async function loadFromIdb() {
+      try {
+        const db = await openIdb();
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const req = tx.objectStore(IDB_STORE).get('current');
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function applyLoadedData(parsed) {
+      if (!parsed || typeof parsed !== 'object') return;
+      if (parsed.activeDay && PROGRAM_DATA[parsed.activeDay]) state.activeDay = parsed.activeDay;
+      if (parsed.weeksByDay) state.weeksByDay = { ...state.weeksByDay, ...parsed.weeksByDay };
+      if (parsed.weights && typeof parsed.weights === 'object') state.weights = parsed.weights;
+      if (parsed.prevWeights && typeof parsed.prevWeights === 'object') state.prevWeights = parsed.prevWeights;
+      if (parsed.completed && typeof parsed.completed === 'object') state.completed = parsed.completed;
+      if (parsed.updatedAt) state.updatedAt = parsed.updatedAt;
+    }
+
+    async function initStorage() {
+      let localData = null;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) localData = JSON.parse(raw);
+      } catch (_) {}
+
+      const idbData = await loadFromIdb();
+
+      if (localData && idbData) {
+        applyLoadedData((idbData.updatedAt || 0) > (localData.updatedAt || 0) ? idbData : localData);
+      } else if (localData) {
+        applyLoadedData(localData);
+      } else if (idbData) {
+        applyLoadedData(idbData);
+      }
+    }
+
+    function updateSaveIndicator(saved) {
+      const el = document.getElementById('saveStatus');
+      if (!el) return;
+      if (saved) {
+        el.className = 'text-[11px] text-muted-sage flex items-center gap-1';
+        el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-muted-sage"></span><span>Сохранено</span>';
+      } else {
+        el.className = 'text-[11px] text-muted-ochre flex items-center gap-1';
+        el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-muted-ochre"></span><span>Сохранение...</span>';
+      }
+    }
+
+    function saveState() {
+      updateSaveIndicator(false);
+      state.updatedAt = Date.now();
+      const payload = {
+        activeDay: state.activeDay,
+        weeksByDay: state.weeksByDay,
+        weights: state.weights,
+        prevWeights: state.prevWeights,
+        completed: state.completed,
+        updatedAt: state.updatedAt
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (_) {}
+      saveToIdb(payload).finally(() => {
+        setTimeout(() => updateSaveIndicator(true), 180);
+      });
+    }
+
+    let toastTimer = null;
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2100);
+    }
+
+    function formatRepsHtml(repString) {
+      if (repString.includes('(пик)')) {
+        const clean = repString.replace('(пик)', '').trim();
+        return `
+          <span class="text-ink-primary">${clean}</span>
+          <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-sans font-semibold rounded-md bg-muted-ochreBg text-muted-ochre border border-muted-ochreBorder align-middle">
+            пик
+          </span>
+        `;
+      }
+      if (repString.includes('(+вес)')) {
+        const clean = repString.replace('(+вес)', '').trim();
+        return `
+          <span class="text-ink-primary">${clean}</span>
+          <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-sans font-semibold rounded-md bg-muted-sageBg text-muted-sage border border-muted-sageBorder align-middle">
+            +вес
+          </span>
+        `;
+      }
+      return `<span class="text-ink-primary">${repString}</span>`;
+    }
+
+    function renderDayTabs() {
+      const container = document.getElementById('dayTabs');
+      const days = ['push', 'pull', 'legs'];
+      container.innerHTML = days.map(dayKey => {
+        const day = PROGRAM_DATA[dayKey];
+        const isActive = state.activeDay === dayKey;
+        return `
+          <button
+            type="button"
+            role="tab"
+            aria-selected="${isActive}"
+            data-day="${dayKey}"
+            class="day-tab-btn py-2 px-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+              isActive
+                ? 'bg-muted-steelBg text-ink-primary border border-muted-steelBorder'
+                : 'text-ink-secondary hover:text-ink-primary border border-transparent'
+            }"
+          >
+            ${day.tabLabel}
+          </button>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.day-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const nextDay = btn.getAttribute('data-day');
+          if (nextDay && nextDay !== state.activeDay) {
+            state.activeDay = nextDay;
+            saveState();
+            renderAll();
+          }
+        });
+      });
+    }
+
+    function renderWeekSelector() {
+      const container = document.getElementById('weekSelector');
+      const summaryEl = document.getElementById('activeWeekSummary');
+      const currentWeekIdx = state.weeksByDay[state.activeDay] ?? 0;
+
+      summaryEl.textContent = WEEK_OPTIONS[currentWeekIdx].full;
+      if (currentWeekIdx === 3) {
+        summaryEl.className = 'font-semibold text-muted-ochre';
+      } else if (currentWeekIdx === 4) {
+        summaryEl.className = 'font-semibold text-muted-sage';
+      } else {
+        summaryEl.className = 'font-semibold text-muted-steel';
+      }
+
+      container.innerHTML = WEEK_OPTIONS.map(w => {
+        const isSelected = currentWeekIdx === w.index;
+        let activeStyle = 'bg-muted-steelBg border-muted-steelBorder text-ink-primary';
+        let subColor = 'text-muted-steel';
+        let dotColor = 'bg-muted-steel';
+
+        if (w.index === 3) {
+          activeStyle = isSelected
+            ? 'bg-muted-ochreBg border-muted-ochreBorder text-ink-primary'
+            : 'bg-base-card border-base-border text-ink-secondary';
+          subColor = 'text-muted-ochre';
+          dotColor = isSelected ? 'bg-muted-ochre' : 'bg-base-border';
+        } else if (w.index === 4) {
+          activeStyle = isSelected
+            ? 'bg-muted-sageBg border-muted-sageBorder text-ink-primary'
+            : 'bg-base-card border-base-border text-ink-secondary';
+          subColor = 'text-muted-sage';
+          dotColor = isSelected ? 'bg-muted-sage' : 'bg-base-border';
+        } else if (!isSelected) {
+          activeStyle = 'bg-base-card border-base-border text-ink-secondary';
+          subColor = 'text-ink-dim';
+          dotColor = 'bg-base-border';
+        }
+
+        return `
+          <button
+            type="button"
+            role="radio"
+            aria-checked="${isSelected}"
+            data-week="${w.index}"
+            class="week-radio-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-xl border transition-all duration-150 active:scale-95 ${activeStyle}"
+          >
+            <div class="flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+              <span class="text-[11px] font-semibold leading-tight">${w.short}</span>
+            </div>
+            <span class="text-[9px] leading-tight mt-0.5 ${subColor}">
+              ${w.sub || '&nbsp;'}
+            </span>
+          </button>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.week-radio-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.getAttribute('data-week'));
+          const prevIdx = state.weeksByDay[state.activeDay] ?? 0;
+          if (!Number.isNaN(idx) && prevIdx !== idx) {
+            // При возврате с Нед. 5 (или Нед. 4) на Нед. 1 запоминаем прошлые веса как ориентир
+            if (idx === 0 && prevIdx >= 3) {
+              const day = PROGRAM_DATA[state.activeDay];
+              day.exercises.forEach(ex => {
+                const k = `${day.id}_${ex.num}`;
+                if (state.weights[k]) {
+                  state.prevWeights[k] = state.weights[k];
+                }
+              });
+              showToast('Новый цикл: прошлые веса сохранены как ориентир');
+            }
+            state.weeksByDay[state.activeDay] = idx;
+            saveState();
+            renderWeekSelector();
+            renderExercises();
+            renderMatrix();
+          }
+        });
+      });
+    }
+
+    function adjustWeight(key, delta) {
+      const raw = String(state.weights[key] ?? '').replace(',', '.').trim();
+      const current = parseFloat(raw);
+      const base = Number.isNaN(current) ? 0 : current;
+      const next = Math.max(0, Math.round((base + delta) * 100) / 100);
+      state.weights[key] = next === 0 ? '' : String(next);
+      saveState();
+
+      const input = document.getElementById(`weight_${key}`);
+      if (input) input.value = state.weights[key];
+    }
+
+    function renderExercises() {
+      const day = PROGRAM_DATA[state.activeDay];
+      const weekIdx = state.weeksByDay[state.activeDay] ?? 0;
+
+      document.getElementById('dayTitle').textContent = day.title;
+      document.getElementById('daySubtitle').textContent = day.subtitle;
+
+      const completedCount = day.exercises.filter(ex => !!state.completed[`${day.id}_${ex.num}`]).length;
+      document.getElementById('dayProgressText').textContent = `${completedCount} / ${day.exercises.length}`;
+
+      const listEl = document.getElementById('exerciseList');
+      listEl.innerHTML = day.exercises.map(ex => {
+        const key = `${day.id}_${ex.num}`;
+        const isDone = !!state.completed[key];
+        const isDetailsOpen = !!state.openDetails[key];
+        const savedWeight = state.weights[key] ?? '';
+        const prevWeight = state.prevWeights[key] ?? '';
+        const currentReps = ex.weeks[weekIdx] || ex.weeks[0];
+
+        return `
+          <article
+            data-ex-key="${key}"
+            class="exercise-card rounded-2xl border transition-all duration-200 ${
+              isDone
+                ? 'bg-base-card/55 border-muted-sageBorder opacity-65'
+                : 'bg-base-card border-base-border'
+            }"
+          >
+            <!-- Верх карточки: Галочка (44x44) + Название + Иконка (i) -->
+            <div class="p-3.5 pb-2.5 flex items-start gap-3">
+              <button
+                type="button"
+                data-toggle-done="${key}"
+                aria-pressed="${isDone}"
+                title="Отметить упражнение выполненным"
+                class="done-btn shrink-0 w-11 h-11 rounded-xl border flex flex-col items-center justify-center transition-all active:scale-90 ${
+                  isDone
+                    ? 'bg-muted-sageBg border-muted-sageBorder text-muted-sage'
+                    : 'bg-base-bg border-base-border text-ink-secondary hover:border-muted-steelBorder'
+                }"
+              >
+                ${
+                  isDone
+                    ? `<svg class="w-5 h-5 text-muted-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                       </svg>`
+                    : `<span class="font-mono text-sm font-bold leading-none text-ink-primary">${ex.num}</span>
+                       <span class="w-3 h-0.5 rounded-full bg-base-border mt-1"></span>`
+                }
+              </button>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <h3 class="text-sm sm:text-[15px] font-semibold leading-snug ${
+                    isDone ? 'line-through text-ink-secondary' : 'text-ink-primary'
+                  }">
+                    ${ex.name}
+                  </h3>
+                  <button
+                    type="button"
+                    data-toggle-details="${key}"
+                    aria-expanded="${isDetailsOpen}"
+                    title="Техника и мышцы"
+                    class="details-btn shrink-0 w-7 h-7 rounded-lg bg-base-bg border border-base-border flex items-center justify-center text-ink-secondary hover:text-ink-primary active:scale-90 transition ${
+                      isDetailsOpen ? 'border-muted-steelBorder text-muted-steel' : ''
+                    }"
+                  >
+                    <span class="font-mono text-xs font-bold leading-none">i</span>
+                  </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-base-borderSoft">
+                    ${ex.equipment}
+                  </span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-muted-steelBg text-muted-steel border border-muted-steelBorder">
+                    ${ex.sets} подх.
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-base-borderSoft">
+                    <svg class="w-3 h-3 text-ink-dim" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    ${ex.rest}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Блок повторений и управления весом -->
+            <div class="px-3.5 pb-3.5 grid grid-cols-12 gap-2 items-stretch">
+              <div class="col-span-6 rounded-xl bg-base-bg border border-base-borderSoft px-3 py-2 flex flex-col justify-center">
+                <span class="text-[10px] font-medium uppercase tracking-wider text-ink-secondary">
+                  Повторения (${WEEK_OPTIONS[weekIdx].short})
+                </span>
+                <div class="font-mono text-base font-bold tracking-tight mt-0.5 leading-snug">
+                  ${formatRepsHtml(currentReps)}
+                </div>
+                ${
+                  prevWeight
+                    ? `<span class="text-[10px] text-ink-dim mt-0.5">прошлый: ${escapeHtml(prevWeight)} кг</span>`
+                    : ''
+                }
+              </div>
+
+              <div class="col-span-6 rounded-xl bg-base-bg border border-base-borderSoft px-2 py-1.5 flex flex-col justify-between">
+                <label for="weight_${key}" class="text-[10px] font-medium uppercase tracking-wider text-ink-secondary text-center">
+                  Вес (кг)
+                </label>
+                <div class="flex items-center justify-between gap-1 mt-0.5">
+                  <button
+                    type="button"
+                    data-weight-delta="-2.5"
+                    data-weight-target="${key}"
+                    class="weight-step-btn w-8 h-8 rounded-lg bg-base-card hover:bg-base-elevated active:scale-90 border border-base-border text-xs font-mono font-semibold text-ink-secondary"
+                  >
+                    -2.5
+                  </button>
+                  <input
+                    id="weight_${key}"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    placeholder="—"
+                    value="${escapeHtml(savedWeight)}"
+                    data-weight-key="${key}"
+                    class="weight-input w-full min-w-0 bg-transparent text-center font-mono text-base font-bold text-ink-primary placeholder-ink-dim focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    data-weight-delta="2.5"
+                    data-weight-target="${key}"
+                    class="weight-step-btn w-8 h-8 rounded-lg bg-base-card hover:bg-base-elevated active:scale-90 border border-base-border text-xs font-mono font-semibold text-ink-secondary"
+                  >
+                    +2.5
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Сворачиваемая подсказка по технике -->
+            <div id="details_${key}" class="accordion-content ${isDetailsOpen ? 'open' : ''}">
+              <div class="accordion-inner">
+                <div class="px-3.5 pb-3 pt-2.5 text-xs leading-relaxed text-ink-secondary space-y-1.5 border-t border-base-borderSoft bg-base-bg/60">
+                  <div>
+                    <span class="text-ink-primary font-medium">Целевые мышцы:</span>
+                    <span class="text-muted-steel">${ex.muscles}</span>
+                  </div>
+                  <div>
+                    <span class="text-ink-primary font-medium">Техника:</span>
+                    <span>${ex.technique}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      listEl.querySelectorAll('.done-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-toggle-done');
+          state.completed[key] = !state.completed[key];
+          saveState();
+          renderExercises();
+        });
+      });
+
+      listEl.querySelectorAll('.details-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-toggle-details');
+          state.openDetails[key] = !state.openDetails[key];
+          const panel = document.getElementById(`details_${key}`);
+          if (panel) panel.classList.toggle('open', state.openDetails[key]);
+          btn.classList.toggle('border-muted-steelBorder', state.openDetails[key]);
+          btn.classList.toggle('text-muted-steel', state.openDetails[key]);
+          btn.setAttribute('aria-expanded', String(!!state.openDetails[key]));
+        });
+      });
+
+      listEl.querySelectorAll('.weight-step-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-weight-target');
+          const delta = parseFloat(btn.getAttribute('data-weight-delta'));
+          if (key && !Number.isNaN(delta)) {
+            adjustWeight(key, delta);
+          }
+        });
+      });
+
+      listEl.querySelectorAll('.weight-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const key = input.getAttribute('data-weight-key');
+          state.weights[key] = e.target.value;
+          saveState();
+        });
+      });
+    }
+
+    function renderMatrix() {
+      const day = PROGRAM_DATA[state.activeDay];
+      const activeWeekIdx = state.weeksByDay[state.activeDay] ?? 0;
+
+      document.getElementById('matrixTotalSets').textContent = `${day.totalSets} подх.`;
+
+      const headRow = document.getElementById('matrixHeadRow');
+      headRow.innerHTML = `
+        <th class="py-2 px-2 text-left font-sans font-semibold text-ink-secondary sticky left-0 bg-base-bg">№</th>
+        ${WEEK_OPTIONS.map(w => {
+          const isCurrent = w.index === activeWeekIdx;
+          let activeCls = 'text-ink-secondary';
+          if (isCurrent) {
+            if (w.index === 3) activeCls = 'text-muted-ochre bg-muted-ochreBg';
+            else if (w.index === 4) activeCls = 'text-muted-sage bg-muted-sageBg';
+            else activeCls = 'text-muted-steel bg-muted-steelBg';
+          }
+          return `
+            <th class="py-2 px-1.5 font-sans font-semibold whitespace-nowrap ${activeCls}">
+              ${w.short}
+            </th>
+          `;
+        }).join('')}
+      `;
+
+      const bodyEl = document.getElementById('matrixBody');
+      bodyEl.innerHTML = day.exercises.map(ex => {
+        return `
+          <tr>
+            <td class="py-2 px-2 text-left font-semibold text-ink-secondary sticky left-0 bg-base-card">
+              ${ex.num}
+            </td>
+            ${ex.weeks.map((val, idx) => {
+              const isCurrent = idx === activeWeekIdx;
+              let cellBg = 'text-ink-secondary';
+              if (isCurrent) {
+                if (idx === 3) cellBg = 'bg-muted-ochreBg text-ink-primary font-semibold';
+                else if (idx === 4) cellBg = 'bg-muted-sageBg text-ink-primary font-semibold';
+                else cellBg = 'bg-muted-steelBg text-ink-primary font-semibold';
+              }
+              return `
+                <td class="py-2 px-1.5 whitespace-nowrap text-[10px] ${cellBg}">
+                  ${val}
+                </td>
+              `;
+            }).join('')}
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function renderAll() {
+      renderDayTabs();
+      renderWeekSelector();
+      renderExercises();
+      renderMatrix();
+    }
+
+    // Беззвучный таймер отдыха (только визуал + виброотклик, без звука)
+    let restInterval = null;
+    let remainingSec = 0;
+
+    function formatSeconds(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function stopRestTimer(resetDisplay = true) {
+      if (restInterval) {
+        clearInterval(restInterval);
+        restInterval = null;
+      }
+      const display = document.getElementById('timerDisplay');
+      const label = document.getElementById('timerLabel');
+      const stopBtn = document.getElementById('timerStopBtn');
+      if (resetDisplay && display) {
+        remainingSec = 0;
+        display.textContent = '00:00';
+        display.className = 'font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center transition-colors';
+      }
+      if (label) label.textContent = 'Отдых (без звука)';
+      if (stopBtn) stopBtn.classList.add('hidden');
+    }
+
+    function startRestTimer(seconds) {
+      stopRestTimer(false);
+      remainingSec = seconds;
+
+      const display = document.getElementById('timerDisplay');
+      const label = document.getElementById('timerLabel');
+      const stopBtn = document.getElementById('timerStopBtn');
+
+      display.textContent = formatSeconds(remainingSec);
+      display.className = 'font-mono text-base font-bold text-muted-steel px-2.5 py-1 rounded-xl bg-muted-steelBg border border-muted-steelBorder min-w-[68px] text-center transition-colors';
+      label.textContent = 'Идёт отдых...';
+      stopBtn.classList.remove('hidden');
+
+      restInterval = setInterval(() => {
+        remainingSec -= 1;
+        if (remainingSec > 0) {
+          display.textContent = formatSeconds(remainingSec);
+        } else {
+          clearInterval(restInterval);
+          restInterval = null;
+          remainingSec = 0;
+          display.textContent = 'ГОТОВО';
+          display.className = 'font-mono text-xs font-bold text-muted-sage px-2.5 py-1.5 rounded-xl bg-muted-sageBg border border-muted-sageBorder min-w-[68px] text-center transition-colors';
+          label.textContent = 'Время вышло — к подходу';
+          if (navigator.vibrate) {
+            try { navigator.vibrate([180, 90, 180]); } catch (_) {}
+          }
+          showToast('Отдых завершён — можно делать подход');
+        }
+      }, 1000);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initStorage();
+      renderAll();
+
+      // Спойлер памятки
+      const toggleGuideBtn = document.getElementById('toggleGuideBtn');
+      const guidePanel = document.getElementById('guidePanel');
+      toggleGuideBtn.addEventListener('click', () => {
+        const isOpen = guidePanel.classList.toggle('open');
+        toggleGuideBtn.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      // Сброс галочек дня
+      document.getElementById('resetDoneBtn').addEventListener('click', () => {
+        const day = PROGRAM_DATA[state.activeDay];
+        let hadAny = false;
+        day.exercises.forEach(ex => {
+          const key = `${day.id}_${ex.num}`;
+          if (state.completed[key]) {
+            delete state.completed[key];
+            hadAny = true;
+          }
+        });
+        saveState();
+        renderExercises();
+        showToast(hadAny ? `Отметки для «${day.tabLabel}» сброшены` : 'Все галочки дня уже сняты');
+      });
+
+      // Экспорт JSON бэкапа
+      document.getElementById('exportBackupBtn').addEventListener('click', () => {
+        try {
+          const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `ppl-backup-${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('Резервная копия скачана');
+        } catch (_) {
+          showToast('Не удалось скачать бэкап');
+        }
+      });
+
+      // Импорт JSON бэкапа
+      const importInput = document.getElementById('importFileInput');
+      document.getElementById('importBackupBtn').addEventListener('click', () => importInput.click());
+      importInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(String(reader.result));
+            applyLoadedData(parsed);
+            saveState();
+            renderAll();
+            showToast('Веса и прогресс восстановлены');
+          } catch (_) {
+            showToast('Ошибка чтения файла бэкапа');
+          }
+          importInput.value = '';
+        };
+        reader.readAsText(file);
+      });
+
+      // Кнопки беззвучного таймера отдыха
+      document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sec = Number(btn.getAttribute('data-timer-sec'));
+          if (sec > 0) startRestTimer(sec);
+        });
+      });
+
+      document.getElementById('timerStopBtn').addEventListener('click', () => stopRestTimer(true));
+    });
+  </script>
+</body>
+</html>
