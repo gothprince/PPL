@@ -96,7 +96,7 @@
 <body class="min-h-screen antialiased">
 
   <!-- Главный контейнер -->
-  <div class="max-w-[540px] mx-auto min-h-screen flex flex-col pb-24">
+  <div class="max-w-[540px] mx-auto min-h-screen flex flex-col pb-32 sm:pb-24">
 
     <!-- Липкая верхняя панель -->
     <header class="sticky top-0 z-30 bg-base-bg/95 backdrop-blur-md border-b border-base-border px-3.5 pt-3 pb-3">
@@ -278,15 +278,15 @@
 
   <!-- Нижний таймер отдыха -->
   <div id="restTimerBar" class="fixed bottom-0 left-0 right-0 z-30 bg-base-card/95 backdrop-blur-md border-t border-base-border px-3.5 py-2.5">
-    <div class="max-w-[540px] mx-auto flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2 min-w-0">
+    <div class="max-w-[540px] mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-center justify-between sm:justify-start gap-2 min-w-0">
         <div id="timerDisplay" class="font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center transition-colors">
           00:00
         </div>
         <span id="timerLabel" class="text-[11px] text-ink-secondary truncate">Отдых</span>
       </div>
 
-      <div class="flex items-center gap-1.5 shrink-0">
+      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-1.5 w-full sm:w-auto sm:shrink-0">
         <button type="button" data-timer-sec="60" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">60с</button>
         <button type="button" data-timer-sec="90" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">90с</button>
         <button type="button" data-timer-sec="120" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">2м</button>
@@ -467,7 +467,7 @@
           {
             num: 7,
             name: 'Разгибания на трицепс из-за головы с канатом',
-            equipment: 'Нижний блок',
+            equipment: 'Блок',
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (длинная головка)',
