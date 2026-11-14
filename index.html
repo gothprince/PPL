@@ -135,7 +135,7 @@
           <div class="mb-3 p-3 rounded-2xl bg-base-card border border-base-border text-xs leading-relaxed text-ink-secondary space-y-2">
             <div>
               <span class="font-semibold text-ink-primary">Двойная прогрессия:</span>
-              Начинай цикл с нижней границы повторений (Нед. 1) и каждую неделю повышай результат по матрице. После закрытия верхней границы (Нед. 5) верни переключатель на Нед. 1 и увеличь вес на <span class="text-muted-sage font-semibold">+2.5 кг</span> или 1 плитку.
+              Начинай цикл с нижней границы повторений (Нед. 1) и каждую неделю повышай результат по матрице. На Нед. 5 (+вес) добавь <span class="text-muted-sage font-semibold">+2.5 кг</span> или 1 плитку (веса 1–4 недель сохранятся как прошлые), а затем верни переключатель на Нед. 1.
             </div>
             <div class="pt-1.5 border-t border-base-borderSoft">
               <span class="font-semibold text-ink-primary">Отдых:</span>
@@ -1080,7 +1080,7 @@
       toastTimer = setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         toast.classList.remove('opacity-100', 'translate-y-0');
-      }, 2100);
+      }, 2400);
     }
 
     function formatRepsHtml(repString) {
@@ -1202,16 +1202,39 @@
           const idx = Number(btn.getAttribute('data-week'));
           const prevIdx = state.weeksByDay[state.activeDay] ?? 0;
           if (!Number.isNaN(idx) && prevIdx !== idx) {
-            if (idx === 0 && prevIdx >= 3) {
-              const day = PROGRAM_DATA[state.activeDay];
+            const day = PROGRAM_DATA[state.activeDay];
+
+            // Переход с 4-й недели на 5-ю (+вес): фиксируем веса 1–4 недель как прошлые,
+            // чтобы при добавлении нового веса на 5-й неделе и последующем переходе на 1-ю он не затирался
+            if (prevIdx === 3 && idx === 4) {
+              let savedCount = 0;
               day.exercises.forEach(ex => {
                 const k = `${day.id}_${ex.num}`;
                 if (state.weights[k]) {
                   state.prevWeights[k] = state.weights[k];
+                  savedCount++;
                 }
               });
-              showToast('Новый цикл: прошлые веса сохранены как ориентир');
+              if (savedCount > 0) {
+                showToast('Неделя 5 (+вес): веса 1–4 недель сохранены как прошлые');
+              }
+            } else if (prevIdx === 3 && idx === 0) {
+              // Прямой переход с 4-й недели на 1-ю (если пользователь пропустил 5-ю неделю)
+              let savedCount = 0;
+              day.exercises.forEach(ex => {
+                const k = `${day.id}_${ex.num}`;
+                if (state.weights[k]) {
+                  state.prevWeights[k] = state.weights[k];
+                  savedCount++;
+                }
+              });
+              if (savedCount > 0) {
+                showToast('Новый цикл: веса 4-й недели сохранены как прошлые');
+              }
             }
+            // При переходе с 5-й недели (prevIdx === 4) на 1-ю (idx === 0) намеренно НЕ перезаписываем state.prevWeights,
+            // оставляя зафиксированный при входе в 5-ю неделю вес 1–4 недель
+
             state.weeksByDay[state.activeDay] = idx;
             saveState();
             renderWeekSelector();
@@ -1227,9 +1250,6 @@
       const current = parseFloat(raw);
       const base = Number.isNaN(current) ? 0 : current;
       const next = Math.max(0, Math.round((base + delta) * 100) / 100);
-      if (state.weights[key] && Number(state.weights[key]) !== next) {
-        state.prevWeights[key] = state.weights[key];
-      }
       state.weights[key] = next === 0 ? '' : String(next);
       saveState();
 
@@ -1512,18 +1532,8 @@
       });
 
       listEl.querySelectorAll('.weight-input').forEach(input => {
-        input.addEventListener('focus', () => {
-          const key = input.getAttribute('data-weight-key');
-          if (key && state.weights[key]) {
-            input.dataset.beforeEdit = state.weights[key];
-          }
-        });
         input.addEventListener('input', (e) => {
           const key = input.getAttribute('data-weight-key');
-          const before = input.dataset.beforeEdit;
-          if (before && before !== e.target.value && e.target.value.trim() !== '') {
-            state.prevWeights[key] = before;
-          }
           state.weights[key] = e.target.value;
           saveState();
         });
