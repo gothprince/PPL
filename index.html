@@ -291,6 +291,7 @@
         <button type="button" data-timer-sec="90" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">90с</button>
         <button type="button" data-timer-sec="120" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">2м</button>
         <button type="button" data-timer-sec="180" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">3м</button>
+        <button id="timerSub15Btn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated border border-base-border text-xs font-mono font-semibold text-ink-secondary active:scale-95 transition">-15с</button>
         <button id="timerAdd15Btn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated border border-base-border text-xs font-mono font-semibold text-ink-secondary active:scale-95 transition">+15с</button>
         <button id="timerToggleBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-muted-steelBg border border-muted-steelBorder text-xs font-semibold text-ink-primary active:scale-95 transition">Пауза</button>
         <button id="timerResetBtn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-elevated border border-base-border text-xs font-semibold text-ink-secondary active:scale-95 transition">✕</button>
@@ -301,7 +302,7 @@
   <!-- Полноэкранный чистый просмотрщик фото тренажёров без чёрных карточек и подложек -->
   <div
     id="equipmentLightbox"
-    class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center"
+    class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center"
     role="dialog"
     aria-modal="true"
     aria-labelledby="lightboxCaption"
@@ -335,7 +336,7 @@
       id="lightboxImg"
       src=""
       alt=""
-      class="max-h-[72vh] max-w-[92vw] object-contain rounded-xl select-none shadow-2xl"
+      class="max-h-[78vh] max-w-[92vw] object-contain rounded-xl select-none shadow-2xl"
     />
 
     <!-- Стрелка вправо (появляется только при 2+ фото) -->
@@ -443,7 +444,7 @@
             rest: '60–90 сек',
             muscles: 'Средняя дельта',
             steps: [
-              { label: '1. Исходное положение:', text: 'Встань боком к нижнему блоку, свободной рукой возьмись за стойку для стабилизации корпуса. Пропусти трос перед собой или из-за спины, локоть чуть согнут, плечо опущено вниз.' },
+              { label: '1. Исходное положение:', text: 'Встань боком к блочной стойке, свободной рукой возьмись за раму для стабилизации корпуса. Пропусти трос перед собой или из-за спины, локоть чуть согнут, плечо опущено вниз.' },
               { label: '2. Движение:', text: 'На выдохе отведи руку строго в сторону до параллели с полом, ведя движение локтем вверх (кисть не выше локтя, мизинец чуть приподнят).' },
               { label: '3. Возврат:', text: 'На вдохе медленно опусти руку к бедру, не расслабляя дельту и не бросая вес вниз.' }
             ],
@@ -452,12 +453,12 @@
           {
             num: 6,
             name: 'Разгибания на трицепс с канатом',
-            equipment: 'Верхний блок',
+            equipment: 'Нижний блок',
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (латеральная и медиальная головки)',
             steps: [
-              { label: '1. Исходное положение:', text: 'Встань лицом к верхнему блоку, возьмись за канат нейтральным хватом, слегка наклони корпус вперёд и прижми локти строго к бокам рёбер.' },
+              { label: '1. Исходное положение:', text: 'Подними каретку блочной стойки вверх, встань лицом к стойке, возьмись за канат нейтральным хватом, слегка наклони корпус вперёд и прижми локти строго к бокам рёбер.' },
               { label: '2. Движение:', text: 'На выдохе разогни предплечья вниз до полного выпрямления рук, в нижней точке разведи концы каната в стороны и задержись на 1 секунду.' },
               { label: '3. Возврат:', text: 'На вдохе подконтрольно верни кисти до уровня груди (угол в локте ~90°), не уводя локти вперёд или назад.' }
             ],
@@ -466,12 +467,12 @@
           {
             num: 7,
             name: 'Разгибания на трицепс из-за головы с канатом',
-            equipment: 'Блок',
+            equipment: 'Нижний блок',
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (длинная головка)',
             steps: [
-              { label: '1. Исходное положение:', text: 'Установи блок в нижнее или среднее положение, повернись спиной к стойке, сделай шаг вперёд в разножку, выведи локти вверх над головой и направь их вперёд и вверх.' },
+              { label: '1. Исходное положение:', text: 'Установи каретку блока в нижнее или среднее положение, повернись спиной к стойке, сделай шаг вперёд в разножку, выведи локти вверх над головой и направь их вперёд и вверх.' },
               { label: '2. Движение:', text: 'На выдохе мощно разогни руки вперёд-вверх, разводя концы каната в стороны в пиковой точке, не разводя локти широко в стороны.' },
               { label: '3. Возврат:', text: 'На вдохе плавно согни руки за голову до глубокого растяжения длинной головки трицепса.' }
             ],
@@ -531,12 +532,12 @@
           {
             num: 4,
             name: 'Пуловер с канатной рукоятью',
-            equipment: 'Верхний блок',
+            equipment: 'Нижний блок',
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Широчайшие (изоляция)',
             steps: [
-              { label: '1. Исходное положение:', text: 'Встань в шаге от верхнего блока, слегка наклони корпус вперёд (спина прямая), возьмись за канат, руки почти прямые и зафиксированы в локтях.' },
+              { label: '1. Исходное положение:', text: 'Подними каретку блочной стойки вверх, встань в шаге от неё, слегка наклони корпус вперёд (спина прямая), возьмись за канат, руки почти прямые и зафиксированы в локтях.' },
               { label: '2. Движение:', text: 'На выдохе потяни рукоять широкой дугой вниз к бёдрам исключительно усилием широчайших, в нижней точке разведи концы каната и сделай паузу 1 секунду.' },
               { label: '3. Возврат:', text: 'На вдохе медленно подними руки вверх до уровня головы, сохраняя постоянное натяжение троса и неизменный угол в локтях.' }
             ],
@@ -545,12 +546,12 @@
           {
             num: 5,
             name: 'Face Pulls (тяга каната к лицу)',
-            equipment: 'Верхний блок',
+            equipment: 'Нижний блок',
             sets: 4,
             rest: '60–90 сек',
             muscles: 'Задняя дельта, трапеции, ротаторы плеча',
             steps: [
-              { label: '1. Исходное положение:', text: 'Установи блок на уровне глаз/верхней части груди, возьмись за канат хватом сверху (большие пальцы направлены назад к себе), сделай шаг назад.' },
+              { label: '1. Исходное положение:', text: 'Установи каретку блока на уровне глаз/верхней части груди, возьмись за канат хватом сверху (большие пальцы направлены назад к себе), сделай шаг назад.' },
               { label: '2. Движение:', text: 'На выдохе потяни центр каната к переносице/лбу, одновременно разводя кисти в стороны и разворачивая плечи наружу (локти на высоте плеч).' },
               { label: '3. Возврат:', text: 'На вдохе плавно выпрями руки вперёд до полного растяжения задних дельт без раскачки корпуса.' }
             ],
@@ -685,7 +686,7 @@
             rest: '60–90 сек',
             muscles: 'Прямая мышца живота (пресс)',
             steps: [
-              { label: '1. Исходное положение:', text: 'Встань на колени лицом к верхнему блоку (или спиной к нему), возьмись за канат и зафиксируй кисти у висков/лба. Таз неподвижен на протяжении всего подхода.' },
+              { label: '1. Исходное положение:', text: 'Подними каретку блочной стойки вверх, встань на колени лицом к стойке (или спиной к ней), возьмись за канат и зафиксируй кисти у висков/лба. Таз неподвижен на протяжении всего подхода.' },
               { label: '2. Движение:', text: 'На мощном выдохе скрути грудную клетку вниз к коленям за счёт округления спины (не наклоняйся с прямой спиной!), задержись внизу на 1 секунду и максимально сожми пресс.' },
               { label: '3. Возврат:', text: 'На вдохе медленно раскрути корпус обратно вверх до лёгкого растяжения мышц живота, не садясь тазом на пятки.' }
             ],
@@ -744,6 +745,8 @@
     }
 
     // Конфигурация фото тренажёров и автоопределение форматов (.webp, .jpg, .png, .jpeg)
+    // cable_high привязан ТОЛЬКО к Тяге верхнего блока широким хватом (День 2, упр. 1),
+    // все остальные блочные упражнения используют cable_low
     const MEDIA_EXTENSIONS = ['.webp', '.jpg', '.png', '.jpeg'];
     const resolvedMediaMap = {};
 
@@ -768,12 +771,15 @@
             { key: 'hammer_shoulder', label: 'Тренажёр Хаммер (плечи)' },
             { key: 'hammer', label: 'Тренажёр Хаммер' }
           ];
+        case 'Верхний блок':
+          if (dayId === 'pull' && ex.num === 1) {
+            return [{ key: 'cable_high', label: 'Верхний блок' }];
+          }
+          return [{ key: 'cable_low', label: 'Нижний блок' }];
         case 'Нижний блок':
           return [{ key: 'cable_low', label: 'Нижний блок' }];
-        case 'Верхний блок':
-          return [{ key: 'cable_high', label: 'Верхний блок' }];
         case 'Блок':
-          return [{ key: 'cable_high', label: 'Блок' }];
+          return [{ key: 'cable_low', label: 'Блок' }];
         case 'Машина Смита / Хаммер':
           return [
             { key: 'smith', label: 'Машина Смита' },
@@ -1247,7 +1253,7 @@
           ? `<button
                type="button"
                data-open-media="${ex.num}"
-               class="equipment-media-btn inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-ink-dim/45 hover:border-muted-steelBorder cursor-pointer active:scale-95 transition"
+               class="equipment-media-btn inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-white/[0.22] hover:border-muted-steelBorder cursor-pointer active:scale-95 transition"
              >
                ${ex.equipment}
              </button>`
@@ -1632,6 +1638,7 @@
       const label = document.getElementById('timerLabel');
       const toggleBtn = document.getElementById('timerToggleBtn');
       const add15Btn = document.getElementById('timerAdd15Btn');
+      const sub15Btn = document.getElementById('timerSub15Btn');
 
       if (remSec > 0) {
         display.textContent = formatSeconds(remSec);
@@ -1645,6 +1652,7 @@
         label.textContent = 'Отдых завершён';
         toggleBtn.classList.add('hidden');
         if (add15Btn) add15Btn.classList.add('hidden');
+        if (sub15Btn) sub15Btn.classList.add('hidden');
         playFinishSignal();
         showToast('Отдых завершён — можно делать подход');
       }
@@ -1664,6 +1672,7 @@
       const toggleBtn = document.getElementById('timerToggleBtn');
       const resetBtn = document.getElementById('timerResetBtn');
       const add15Btn = document.getElementById('timerAdd15Btn');
+      const sub15Btn = document.getElementById('timerSub15Btn');
 
       if (resetDisplay && display) {
         display.textContent = '00:00';
@@ -1673,6 +1682,7 @@
       if (toggleBtn) toggleBtn.classList.add('hidden');
       if (resetBtn) resetBtn.classList.add('hidden');
       if (add15Btn) add15Btn.classList.add('hidden');
+      if (sub15Btn) sub15Btn.classList.add('hidden');
     }
 
     function startRestTimer(seconds) {
@@ -1689,6 +1699,7 @@
       const toggleBtn = document.getElementById('timerToggleBtn');
       const resetBtn = document.getElementById('timerResetBtn');
       const add15Btn = document.getElementById('timerAdd15Btn');
+      const sub15Btn = document.getElementById('timerSub15Btn');
 
       display.textContent = formatSeconds(seconds);
       display.className = 'font-mono text-base font-bold text-muted-steel px-2.5 py-1 rounded-xl bg-muted-steelBg border border-muted-steelBorder min-w-[68px] text-center transition-colors';
@@ -1697,16 +1708,17 @@
       toggleBtn.classList.remove('hidden');
       resetBtn.classList.remove('hidden');
       if (add15Btn) add15Btn.classList.remove('hidden');
+      if (sub15Btn) sub15Btn.classList.remove('hidden');
 
       restInterval = setInterval(syncTimerTick, 250);
     }
 
-    function add15SecondsToTimer() {
+    function adjustTimerSeconds(deltaSec) {
       if (isTimerRunning) {
-        timerEndTimestamp += 15000;
+        timerEndTimestamp = Math.max(Date.now() + 1000, timerEndTimestamp + deltaSec * 1000);
         syncTimerTick();
       } else if (pausedRemainingSec > 0) {
-        pausedRemainingSec += 15;
+        pausedRemainingSec = Math.max(1, pausedRemainingSec + deltaSec);
         const display = document.getElementById('timerDisplay');
         if (display) display.textContent = formatSeconds(pausedRemainingSec);
       }
@@ -1923,7 +1935,8 @@
         });
       });
 
-      document.getElementById('timerAdd15Btn').addEventListener('click', add15SecondsToTimer);
+      document.getElementById('timerSub15Btn').addEventListener('click', () => adjustTimerSeconds(-15));
+      document.getElementById('timerAdd15Btn').addEventListener('click', () => adjustTimerSeconds(15));
       document.getElementById('timerToggleBtn').addEventListener('click', togglePauseTimer);
       document.getElementById('timerResetBtn').addEventListener('click', () => stopRestTimer(true));
     });
