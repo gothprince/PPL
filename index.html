@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>PPL • Трекер прогрессии</title>
+  <title>Push/Pull/Legs • Трекер прогрессии</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,8 +22,8 @@
               bg: '#121316',
               card: '#191B20',
               elevated: '#1F2229',
-              border: '#272A32',
-              borderSoft: '#22252C',
+              border: '#262930',
+              borderSoft: '#21242B',
             },
             muted: {
               steel: '#6B8CAE',
@@ -47,7 +47,7 @@
     }
   </script>
   <style>
-    /* Полный запрет случайного выделения текста при скролле и касаниях */
+    /* Полный запрет случайного выделения текста при касании и скролле на iPhone */
     * {
       -webkit-user-select: none;
       -moz-user-select: none;
@@ -57,8 +57,9 @@
       -webkit-touch-callout: none;
     }
 
-    /* Ввод разрешён исключительно в поле рабочего веса */
-    input.weight-input {
+    /* Ввод разрешён исключительно в полях веса и импорта */
+    input.weight-input,
+    input.backup-input {
       -webkit-user-select: text;
       -moz-user-select: text;
       -ms-user-select: text;
@@ -76,7 +77,7 @@
     .accordion-content {
       display: grid;
       grid-template-rows: 0fr;
-      transition: grid-template-rows 0.2s ease-out;
+      transition: grid-template-rows 0.22s ease-out;
     }
     .accordion-content.open {
       grid-template-rows: 1fr;
@@ -99,14 +100,10 @@
 
     <!-- Липкая верхняя панель -->
     <header class="sticky top-0 z-30 bg-base-bg/95 backdrop-blur-md border-b border-base-border px-3.5 pt-3 pb-3">
-      <!-- Заголовок и статус автосохранения -->
       <div class="flex items-center justify-between gap-2 mb-2.5">
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-ink-primary">PPL • 3 дня в неделю</h1>
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted-steelBg text-muted-steel border border-muted-steelBorder">
-              Двойная прогрессия
-            </span>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-ink-primary">Push/Pull/Legs</h1>
           </div>
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-[11px] text-ink-secondary">25 рабочих подходов</span>
@@ -201,7 +198,7 @@
         </div>
       </section>
 
-      <!-- Управление тренировкой и резервные копии -->
+      <!-- Управление тренировкой и бэкапами -->
       <div class="pt-2 space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <button
@@ -234,22 +231,45 @@
             class="py-2.5 px-3 rounded-2xl bg-base-card hover:bg-base-elevated active:scale-[0.99] border border-base-border text-[11px] font-medium text-ink-secondary flex items-center justify-center gap-1.5 transition"
           >
             <svg class="w-3.5 h-3.5 text-muted-steel" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
-            <span>Скачать бэкап</span>
+            <span>Экспорт</span>
           </button>
 
           <button
-            id="importBackupBtn"
+            id="toggleImportBoxBtn"
             type="button"
             class="py-2.5 px-3 rounded-2xl bg-base-card hover:bg-base-elevated active:scale-[0.99] border border-base-border text-[11px] font-medium text-ink-secondary flex items-center justify-center gap-1.5 transition"
           >
             <svg class="w-3.5 h-3.5 text-muted-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            <span>Загрузить бэкап</span>
+            <span>Импорт</span>
           </button>
-          <input id="importFileInput" type="file" accept=".json,application/json" class="hidden" />
+        </div>
+
+        <!-- Встроенное поле вставки строки бэкапа (без системных диалогов) -->
+        <div id="importPanel" class="accordion-content">
+          <div class="accordion-inner">
+            <div class="p-3 rounded-2xl bg-base-card border border-base-border space-y-2 mt-1">
+              <div class="text-[11px] text-ink-secondary">Вставь скопированную строку бэкапа:</div>
+              <div class="flex items-center gap-2">
+                <input
+                  id="importCodeInput"
+                  type="text"
+                  placeholder='{"weights":...}'
+                  class="backup-input flex-1 min-w-0 px-3 py-2 rounded-xl bg-base-bg border border-base-border text-xs font-mono text-ink-primary placeholder-ink-dim focus:outline-none focus:border-muted-steelBorder"
+                />
+                <button
+                  id="applyImportBtn"
+                  type="button"
+                  class="px-3.5 py-2 rounded-xl bg-muted-sageBg border border-muted-sageBorder text-xs font-semibold text-ink-primary active:scale-95 transition shrink-0"
+                >
+                  Загрузить
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -263,7 +283,7 @@
         <div id="timerDisplay" class="font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center transition-colors">
           00:00
         </div>
-        <span id="timerLabel" class="text-[11px] text-ink-secondary truncate">Отдых (без звука)</span>
+        <span id="timerLabel" class="text-[11px] text-ink-secondary truncate">Отдых</span>
       </div>
 
       <div class="flex items-center gap-1.5 shrink-0">
@@ -271,7 +291,82 @@
         <button type="button" data-timer-sec="90" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">90с</button>
         <button type="button" data-timer-sec="120" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">2м</button>
         <button type="button" data-timer-sec="180" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">3м</button>
-        <button id="timerStopBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-base-elevated border border-base-border text-xs font-semibold text-ink-secondary active:scale-95 transition">Стоп</button>
+        <button id="timerToggleBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-muted-steelBg border border-muted-steelBorder text-xs font-semibold text-ink-primary active:scale-95 transition">Пауза</button>
+        <button id="timerResetBtn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-elevated border border-base-border text-xs font-semibold text-ink-secondary active:scale-95 transition">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Лайтбокс / Свайп-галерея тренажёров -->
+  <div
+    id="equipmentLightbox"
+    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="lightboxCaption"
+  >
+    <div
+      id="lightboxCard"
+      class="bg-base-card border border-base-border rounded-2xl overflow-hidden max-w-[440px] w-full shadow-2xl"
+    >
+      <!-- Контейнер изображения по центру -->
+      <div
+        id="lightboxImageStage"
+        class="bg-base-bg flex items-center justify-center relative min-h-[220px] max-h-[65vh] overflow-hidden"
+      >
+        <!-- Кнопка закрытия в правом верхнем углу -->
+        <button
+          id="lightboxCloseBtn"
+          type="button"
+          aria-label="Закрыть просмотр"
+          class="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-xl bg-base-card/85 hover:bg-base-elevated active:scale-90 border border-base-border text-ink-secondary hover:text-ink-primary flex items-center justify-center transition"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <!-- Стрелка влево (для 2+ фото) -->
+        <button
+          id="lightboxPrevBtn"
+          type="button"
+          aria-label="Предыдущее фото"
+          class="hidden absolute left-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-xl bg-base-card/85 hover:bg-base-elevated active:scale-90 border border-base-border text-ink-primary items-center justify-center transition"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <img
+          id="lightboxImg"
+          src=""
+          alt=""
+          class="object-contain max-h-[60vh] w-auto mx-auto transition-opacity duration-150"
+        />
+
+        <!-- Стрелка вправо (для 2+ фото) -->
+        <button
+          id="lightboxNextBtn"
+          type="button"
+          aria-label="Следующее фото"
+          class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-xl bg-base-card/85 hover:bg-base-elevated active:scale-90 border border-base-border text-ink-primary items-center justify-center transition"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Подпись тренажёра по центру снизу -->
+      <div class="px-4 py-3 text-center border-t border-base-borderSoft">
+        <div id="lightboxCaption" class="text-sm sm:text-base font-bold text-ink-primary"></div>
+
+        <!-- Точки и счётчик слайдов (показываются только при 2+ фото) -->
+        <div id="lightboxPagination" class="hidden items-center justify-center gap-2 mt-2">
+          <div id="lightboxDots" class="flex items-center gap-1.5"></div>
+          <span id="lightboxCounter" class="text-[11px] font-mono text-ink-secondary"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -288,7 +383,7 @@
     const PROGRAM_DATA = {
       push: {
         id: 'push',
-        tabLabel: '1 - Push (Пн)',
+        tabLabel: 'Пн • Push',
         title: 'ДЕНЬ 1 — PUSH (ПН)',
         subtitle: 'Грудь, Плечи, Трицепс • 25 подходов',
         totalSets: 25,
@@ -297,77 +392,118 @@
             num: 1,
             name: 'Жим лёжа',
             equipment: 'Машина Смита',
+            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '2.5–3.5 мин',
             muscles: 'Грудь (середина)',
-            technique: 'Базовое движение, опускание до лёгкого касания низа груди.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Ляг на горизонтальную скамью так, чтобы гриф находился прямо над серединой груди. Сведите лопатки, прижмите плечи к скамье и плотно упритесь стопами в пол. Хват чуть шире плеч.' },
+              { label: '2. Движение:', text: 'Сними гриф со стопоров и плавно опусти к нижней части груди на вдохе (локти под углом ~45° к корпусу, не разводи на 90°).' },
+              { label: '3. Возврат:', text: 'На выдохе мощно выжми гриф вверх до полного выпрямления рук, не отрывая таз и лопатки от скамьи.' }
+            ],
             weeks: ['6-6-6-6', '8-7-7-6', '9-9-8-8', '10-10-10-10 (пик)', '6-6-6-6 (+вес)']
           },
           {
             num: 2,
             name: 'Жим на наклонной скамье (30°)',
             equipment: 'Машина Смита',
+            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Грудь (верх)',
-            technique: 'Угол скамьи 30°, акцент на верхнюю часть грудных.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Выставь спинку скамьи под угол 30° и расположи её так, чтобы гриф опускался ровно на верх груди (на 3–4 см ниже ключиц). Сведите лопатки и зафиксируй стопы.' },
+              { label: '2. Движение:', text: 'На вдохе подконтрольно опусти гриф до лёгкого касания верха груди, удерживая предплечья вертикально под грифом.' },
+              { label: '3. Возврат:', text: 'На выдохе выжми гриф строго вверх, сохраняя напряжение в верхней части грудных и не выводя плечи вперёд.' }
+            ],
             weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
           },
           {
             num: 3,
             name: 'Сведения рук (или «Бабочка»)',
-            equipment: 'Кроссовер',
+            equipment: 'Кроссовер / Pec Deck',
+            media: [
+              { file: 'crossover', caption: 'Кроссовер' },
+              { file: 'pecdeck', caption: 'Pec Deck («Бабочка»)' }
+            ],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Грудь (изоляция)',
-            technique: 'Каретки на уровне плеч или выше, сводить локти, перехлёст ладоней в пике. Альтернатива: Pec Deck.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Установи блоки на уровне плеч (или сядь в тренажёр так, чтобы рукояти были на уровне середины груди). Сведите лопатки, грудь подай чуть вперёд, локти слегка согнуты и зафиксированы.' },
+              { label: '2. Движение:', text: 'На выдохе сведи руки перед собой по широкой дуге, сводя именно локти друг к другу, а не кисти. В пике сделай паузу 1 секунду и максимально прожми грудные.' },
+              { label: '3. Возврат:', text: 'На вдохе медленно разведи руки назад до приятного растяжения в груди, не роняя локти вниз.' }
+            ],
             weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
           },
           {
             num: 4,
             name: 'Жим на плечи сидя',
             equipment: 'Тренажёр Хаммер',
+            media: [
+              { file: 'hammer_shoulder', caption: 'Тренажёр Хаммер (плечи)' },
+              { file: 'hammer', caption: 'Тренажёр Хаммер' }
+            ],
             sets: 4,
             rest: '2–3 мин',
             muscles: 'Передняя и средняя дельта',
-            technique: 'Параллельный хват (нейтральный) для защиты суставов.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Отрегулируй сиденье так, чтобы рукояти находились на уровне ушей/плеч. Плотно прижми спину и затылок к спинке, возьмись параллельным (нейтральным) хватом для защиты суставов.' },
+              { label: '2. Движение:', text: 'На выдохе выжми рукояти вверх по дуге, не доводя локти до полного щелчка в верхней точке, чтобы сохранить нагрузку в дельтах.' },
+              { label: '3. Возврат:', text: 'На вдохе плавно опусти вес за 2 секунды до уровня подбородка/ушей без удара плитками.' }
+            ],
             weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
           },
           {
             num: 5,
             name: 'Отведения рук в сторону одной рукой',
             equipment: 'Нижний блок',
+            media: [{ file: 'cable_low', caption: 'Нижний блок' }],
             sets: 4,
             rest: '60–90 сек',
             muscles: 'Средняя дельта',
-            technique: 'Подъём до параллели с полом, плечо опущено; трос можно вести из-за спины для растяжения.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Встань боком к нижнему блоку, свободной рукой возьмись за стойку для стабилизации корпуса. Пропусти трос перед собой или из-за спины, локоть чуть согнут, плечо опущено вниз.' },
+              { label: '2. Движение:', text: 'На выдохе отведи руку строго в сторону до параллели с полом, ведя движение локтем вверх (кисть не выше локтя, мизинец чуть приподнят).' },
+              { label: '3. Возврат:', text: 'На вдохе медленно опусти руку к бедру, не расслабляя дельту и не бросая вес вниз.' }
+            ],
             weeks: ['12-12-12-12', '13-13-13-13', '14-14-14-14', '15-15-15-15 (пик)', '12-12-12-12 (+вес)']
           },
           {
             num: 6,
             name: 'Разгибания на трицепс с канатом',
             equipment: 'Верхний блок',
+            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (латеральная и медиальная головки)',
-            technique: 'Локти зафиксированы по бокам корпуса, разводить концы каната в нижней точке.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Встань лицом к верхнему блоку, возьмись за канат нейтральным хватом, слегка наклони корпус вперёд и прижми локти строго к бокам рёбер.' },
+              { label: '2. Движение:', text: 'На выдохе разогни предплечья вниз до полного выпрямления рук, в нижней точке разведи концы каната в стороны и задержись на 1 секунду.' },
+              { label: '3. Возврат:', text: 'На вдохе подконтрольно верни кисти до уровня груди (угол в локте ~90°), не уводя локти вперёд или назад.' }
+            ],
             weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
           },
           {
             num: 7,
             name: 'Разгибания на трицепс из-за головы с канатом',
             equipment: 'Блок + канат',
+            media: [{ file: 'cable_high', caption: 'Блок + канат' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (длинная головка)',
-            technique: 'Максимальное растяжение трицепса в нижней фазе, контролируемый темп.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Установи блок в нижнее или среднее положение, повернись спиной к стойке, сделай шаг вперёд в разножку, выведи локти вверх над головой и направь их вперёд и вверх.' },
+              { label: '2. Движение:', text: 'На выдохе мощно разогни руки вперёд-вверх, разводя концы каната в стороны в пиковой точке, не разводя локти широко в стороны.' },
+              { label: '3. Возврат:', text: 'На вдохе плавно согни руки за голову до глубокого растяжения длинной головки трицепса.' }
+            ],
             weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
           }
         ]
       },
       pull: {
         id: 'pull',
-        tabLabel: '2 - Pull (Ср)',
+        tabLabel: 'Ср • Pull',
         title: 'ДЕНЬ 2 — PULL (СР)',
         subtitle: 'Спина, Задняя дельта, Бицепс • 25 подходов',
         totalSets: 25,
@@ -376,78 +512,117 @@
             num: 1,
             name: 'Тяга верхнего блока широким хватом',
             equipment: 'Верхний блок',
+            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Широчайшие (ширина спины)',
-            technique: 'Тянуть локтями вниз к поясу, без сильного отклонения корпуса назад.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Зафиксируй бёдра под валиками, возьмись за рукоять хватом в 1.5 раза шире плеч (можно с лямками). Грудь подай вверх, корпус отклони назад на 10–15°.' },
+              { label: '2. Движение:', text: 'На выдохе опусти плечи вниз и потяни рукоять к верху груди, направляя локти строго вниз вдоль корпуса. Внизу сведи лопатки на 1 секунду.' },
+              { label: '3. Возврат:', text: 'На вдохе плавно отпусти рукоять вверх за 2–3 секунды до полного вытяжения широчайших, не сутуля плечи.' }
+            ],
             weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
           },
           {
             num: 2,
             name: 'Тяга в наклоне (или Хаммер с упором в грудь)',
-            equipment: 'Машина Смита',
+            equipment: 'Машина Смита / Хаммер',
+            media: [
+              { file: 'smith', caption: 'Машина Смита' },
+              { file: 'hammer_row', caption: 'Хаммер с упором в грудь' },
+              { file: 'hammer', caption: 'Тренажёр Хаммер' }
+            ],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Верх и середина спины (толщина)',
-            technique: 'Наклон корпуса ~45°, тяга к низу живота. Альтернатива: Хаммер с упором в грудь.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'В Смите наклони корпус под углом ~45° с прямой спиной (или плотно упрись грудью в подушку Хаммера). Возьмись за гриф/рукояти на ширине плеч.' },
+              { label: '2. Движение:', text: 'На выдохе потяни вес к низу живота (или назад в Хаммере), ведя локти близко к корпусу и прожимая середину спины в пике.' },
+              { label: '3. Возврат:', text: 'На вдохе подконтрольно опусти вес до полного растяжения мышц спины, не округляя поясницу и не дёргая корпусом.' }
+            ],
             weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
           },
           {
             num: 3,
             name: 'Горизонтальная тяга сидя (V-рукоять)',
             equipment: 'Горизонтальный блок',
+            media: [{ file: 'cable_row', caption: 'Горизонтальный блок' }],
             sets: 3,
             rest: '2 мин',
             muscles: 'Середина спины, ромбовидные',
-            technique: 'Сводить лопатки в конечной точке, удерживать естественный прогиб в пояснице.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Упрись стопами в платформу, колени слегка согнуты, спина прямая с естественным прогибом в пояснице. Возьмись за V-рукоять нейтральным хватом.' },
+              { label: '2. Движение:', text: 'На выдохе потяни рукоять к низу живота (к пупку), отводя локти максимально назад вдоль рёбер и сводя лопатки вместе.' },
+              { label: '3. Возврат:', text: 'На вдохе плавно верни руки вперёд, позволяя лопаткам разойтись и растянуть спину без наклона корпуса вперёд.' }
+            ],
             weeks: ['10-10-10', '11-11-10', '12-11-11', '12-12-12 (пик)', '10-10-10 (+вес)']
           },
           {
             num: 4,
             name: 'Пуловер с канатной рукоятью',
             equipment: 'Верхний блок',
+            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Широчайшие (изоляция)',
-            technique: 'Чуть согнутые локти, тяга дугой до бёдер с паузой в нижней точке.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Встань в шаге от верхнего блока, слегка наклони корпус вперёд (спина прямая), возьмись за канат, руки почти прямые и зафиксированы в локтях.' },
+              { label: '2. Движение:', text: 'На выдохе потяни рукоять широкой дугой вниз к бёдрам исключительно усилием широчайших, в нижней точке разведи концы каната и сделай паузу 1 секунду.' },
+              { label: '3. Возврат:', text: 'На вдохе медленно подними руки вверх до уровня головы, сохраняя постоянное натяжение троса и неизменный угол в локтях.' }
+            ],
             weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
           },
           {
             num: 5,
             name: 'Face Pulls (тяга каната к лицу)',
             equipment: 'Верхний блок',
+            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 4,
             rest: '60–90 сек',
             muscles: 'Задняя дельта, трапеции, ротаторы плеча',
-            technique: 'Тянуть к уровню лба/переносицы, разводя кисти наружу (внешняя ротация плеча).',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Установи блок на уровне глаз/верхней части груди, возьмись за канат хватом сверху (большие пальцы направлены назад к себе), сделай шаг назад.' },
+              { label: '2. Движение:', text: 'На выдохе потяни центр каната к переносице/лбу, одновременно разводя кисти в стороны и разворачивая плечи наружу (локти на высоте плеч).' },
+              { label: '3. Возврат:', text: 'На вдохе плавно выпрями руки вперёд до полного растяжения задних дельт без раскачки корпуса.' }
+            ],
             weeks: ['12-12-12-12', '13-13-13-13', '14-14-14-14', '15-15-15-15 (пик)', '12-12-12-12 (+вес)']
           },
           {
             num: 6,
             name: 'Сгибания рук на бицепс',
             equipment: 'Скамья Скотта',
+            media: [{ file: 'scott', caption: 'Скамья Скотта' }],
             sets: 4,
             rest: '1.5–2 мин',
             muscles: 'Бицепс (пик и короткая головка)',
-            technique: 'Полная амплитуда без отрыва трицепсов от подушки и резких бросков веса.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Отрегулируй сиденье так, чтобы подмышки плотно лежали на верхнем крае парты, а трицепсы были прижаты к подушке. Возьмись хватом снизу на ширине плеч.' },
+              { label: '2. Движение:', text: 'На выдохе согни руки и подними вес вверх без отрыва локтей от подушки и без отклонения корпуса назад.' },
+              { label: '3. Возврат:', text: 'На вдохе медленно опусти вес за 2–3 секунды почти до полного выпрямления рук (оставь микросгиб в локте, чтобы не перегружать связки).' }
+            ],
             weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
           },
           {
             num: 7,
             name: 'Сгибания рук на бицепс с прямой рукоятью',
             equipment: 'Нижний блок',
+            media: [{ file: 'cable_low', caption: 'Нижний блок' }],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Бицепс (общий объём)',
-            technique: 'Постоянное натяжение троса во всей амплитуде, локти зафиксированы по бокам.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Встань лицом к нижнему блоку, возьмись за прямую вращающуюся рукоять хватом снизу на ширине плеч, прижми локти строго к бокам корпуса.' },
+              { label: '2. Движение:', text: 'На выдохе согни руки до уровня плеч, не выводя локти вперёд и не помогая себе поясницей. В верхней точке напряги бицепс на 1 секунду.' },
+              { label: '3. Возврат:', text: 'На вдохе плавно опусти рукоять вниз до полного выпрямления рук, сохраняя постоянное натяжение троса.' }
+            ],
             weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
           }
         ]
       },
       legs: {
         id: 'legs',
-        tabLabel: '3 - Legs (Пт)',
-        title: 'ДЕНЬ 3 — LEGS + ДОБИВКА БИЦЕПСА (ПТ)',
+        tabLabel: 'Пт • Legs',
+        title: 'ДЕНЬ 3 — LEGS (ПТ)',
         subtitle: 'Ноги, Пресс, Бицепс • 25 подходов',
         totalSets: 25,
         exercises: [
@@ -455,80 +630,123 @@
             num: 1,
             name: 'Приседания со штангой на спине',
             equipment: 'Машина Смита',
+            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '3–3.5 мин',
             muscles: 'Квадрицепсы, ягодицы, приводящие',
-            technique: 'Главное базовое движение дня, глубина до параллели или чуть ниже.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Положи гриф на верх трапеций (не на шею), поставь стопы на ширине плеч на 15–20 см вперёд от линии грифа, носки слегка разверни наружу. Напряги пресс и поясницу.' },
+              { label: '2. Движение:', text: 'На вдохе отведи таз назад и опустись вниз до параллели бёдер с полом или чуть ниже, направляя колени строго по линии носков и не отрывая пятки.' },
+              { label: '3. Возврат:', text: 'На выдохе мощно вытолкни себя вверх пятками, не сводя колени внутрь и не до конца выпрямляя их вверху.' }
+            ],
             weeks: ['6-6-6-6', '8-7-7-6', '9-9-8-8', '10-10-10-10 (пик)', '6-6-6-6 (+вес)']
           },
           {
             num: 2,
             name: 'Румынская тяга (замена: гиперэкстензия 4×10–15 или +2–3 подхода сгибаний)',
             equipment: 'Машина Смита',
+            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Бицепс бедра, ягодицы, разгибатели',
-            technique: 'Отводить таз назад на чуть согнутых коленях до растяжения задней поверхности. Замена: гиперэкстензия 4×10–15 или +2–3 подхода сгибаний.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Возьми гриф на ширине плеч, встань ровно, стопы на ширине таза, колени слегка согнуты (~15°) и зафиксированы в этом положении на весь подход. Лопатки сведены, спина прямая.' },
+              { label: '2. Движение:', text: 'На вдохе медленно отводи таз строго назад, скользя грифом вдоль бёдер до середины голени, пока не почувствуешь сильное натяжение задней поверхности бедра.' },
+              { label: '3. Возврат:', text: 'На выдохе мощно подай таз вперёд за счёт ягодиц и бицепса бедра, возвращаясь в исходную стойку без переразгибания в пояснице.' }
+            ],
             weeks: ['8-8-8-8', '10-9-9-8', '11-11-10-10', '12-12-12-12 (пик)', '8-8-8-8 (+вес)']
           },
           {
             num: 3,
             name: 'Жим ногами (наклонный или горизонтальный)',
             equipment: 'Платформа',
+            media: [{ file: 'leg_press', caption: 'Платформа (жим ногами)' }],
             sets: 3,
             rest: '2 мин',
             muscles: 'Квадрицепсы, ягодицы',
-            technique: 'Не отрывать таз от спинки в нижней точке, не вставлять колени до щелчка вверху.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Плотно прижми поясницу и таз к спинке тренажёра, поставь стопы на середину платформы на ширине плеч, возьмись за боковые рукояти.' },
+              { label: '2. Движение:', text: 'На вдохе плавно опусти платформу до угла ~90° в коленях, контролируя, чтобы таз и крестец не отрывались от сиденья в нижней точке.' },
+              { label: '3. Возврат:', text: 'На выдохе выжми платформу вверх всей стопой, оставляя колени слегка согнутыми в верхней точке (не вставляй суставы до щелчка).' }
+            ],
             weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
           },
           {
             num: 4,
             name: 'Разгибания ног сидя',
             equipment: 'Тренажёр',
+            media: [{ file: 'leg_ext', caption: 'Тренажёр (разгибания ног)' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Квадрицепсы (изоляция)',
-            technique: 'Пауза на 1 секунду в верхней точке пикового сокращения.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Отрегулируй спинку так, чтобы сгиб колена совпадал с осью вращения тренажёра, а нижний валик лежал на голени чуть выше стопы. Плотно прижми таз и поясницу.' },
+              { label: '2. Движение:', text: 'На выдохе полностью разогни ноги в коленях и сделай чёткую паузу 1 секунду в верхней точке для пикового сокращения квадрицепсов.' },
+              { label: '3. Возврат:', text: 'На вдохе медленно опусти вес за 2–3 секунды до угла 90° без удара плитками внизу.' }
+            ],
             weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
           },
           {
             num: 5,
             name: 'Сгибания ног лёжа / сидя',
             equipment: 'Тренажёр',
+            media: [{ file: 'leg_curl', caption: 'Тренажёр (сгибания ног)' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Бицепс бедра (изоляция)',
-            technique: 'Подконтрольное опускание веса (2–3 секунды), без инерции и отрыва таза.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Выровняй колени по оси тренажёра, валик зафиксируй на ахилловом сухожилии (чуть выше пяток). Прижми таз к скамье/сиденью, носки натяни на себя.' },
+              { label: '2. Движение:', text: 'На выдохе мощно согни ноги, подтягивая валик максимально близко к ягодицам без отрыва таза от скамьи.' },
+              { label: '3. Возврат:', text: 'На вдохе подконтрольно выпрями ноги за 2–3 секунды, не бросая вес и оставляя лёгкое напряжение в нижней точке.' }
+            ],
             weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
           },
           {
             num: 6,
             name: 'Подъёмы на носки стоя',
             equipment: 'Тренажёр / Смит',
+            media: [
+              { file: 'calf_machine', caption: 'Тренажёр на голень' },
+              { file: 'smith', caption: 'Машина Смита' }
+            ],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Икроножные мышцы',
-            technique: 'Пауза 1–2 секунды в нижней точке растяжения и в пике сокращения, без отскоков.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Встань подушечками стоп на край платформы (пятки свободно свисают вниз), колени прямые, но не заблокированные, корпус ровный.' },
+              { label: '2. Движение:', text: 'На выдохе максимально высоко поднимись на носки, делая упор на большой и второй пальцы стопы, задержись в пике на 1–2 секунды.' },
+              { label: '3. Возврат:', text: 'На вдохе медленно опусти пятки ниже уровня платформы до глубокого растяжения икр и выдержи паузу 1–2 секунды без отскока.' }
+            ],
             weeks: ['12-12-12', '13-13-13', '14-14-14', '15-15-15 (пик)', '12-12-12 (+вес)']
           },
           {
             num: 7,
             name: 'Скручивания в блоке',
             equipment: 'Блок',
+            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 2,
             rest: '60–90 сек',
             muscles: 'Прямая мышца живота (пресс)',
-            technique: 'Тянуть локти и грудь к коленям за счёт округления спины (не наклоняться с прямой спиной), в нижней точке мощный выдох и пауза 1 сек.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Встань на колени лицом к верхнему блоку (или спиной к нему), возьмись за канат и зафиксируй кисти у висков/лба. Таз неподвижен на протяжении всего подхода.' },
+              { label: '2. Движение:', text: 'На мощном выдохе скрути грудную клетку вниз к коленям за счёт округления спины (не наклоняйся с прямой спиной!), задержись внизу на 1 секунду и максимально сожми пресс.' },
+              { label: '3. Возврат:', text: 'На вдохе медленно раскрути корпус обратно вверх до лёгкого растяжения мышц живота, не садясь тазом на пятки.' }
+            ],
             weeks: ['12-12', '15-14', '18-17', '20-20 (пик)', '12-12 (+вес)']
           },
           {
             num: 8,
             name: 'Добивка: молотковые сгибания с канатом',
             equipment: 'Нижний блок',
+            media: [{ file: 'cable_low', caption: 'Нижний блок' }],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Бицепс, брахиалис, предплечья',
-            technique: 'Вторая стимуляция бицепса в неделю; при сильной усталости после ног допустимо пропустить.',
+            steps: [
+              { label: '1. Исходное положение:', text: 'Встань лицом к нижнему блоку, возьмись за канат нейтральным хватом (ладони смотрят друг на друга, большие пальцы вверх), прижми локти строго к рёбрам.' },
+              { label: '2. Движение:', text: 'На выдохе согни руки и подними кисти к плечам без раскачки корпуса и выведения локтей вперёд (при сильной усталости после ног упражнение можно пропустить).' },
+              { label: '3. Возврат:', text: 'На вдохе плавно опусти руки вниз до полного выпрямления, удерживая натяжение троса в нижней точке.' }
+            ],
             weeks: ['10-10-10', '12-12-11', '14-13-13', '15-15-15 (пик)', '10-10-10 (+вес)']
           }
         ]
@@ -543,9 +761,147 @@
       { index: 4, short: 'Нед. 5', sub: '(+вес)', full: 'Неделя 5 (+вес)' }
     ];
 
-    const STORAGE_KEY = 'ppl_tracker_state_v2';
-    const IDB_NAME = 'ppl_tracker_db';
+    const STORAGE_KEY = 'ppl_tracker_v2';
+    const LEGACY_STORAGE_KEY = 'ppl_tracker_state_v2';
+    const IDB_NAME = 'PPLTrackerDB';
     const IDB_STORE = 'state_store';
+
+    // Автоопределение доступных картинок тренажёров без ошибок при отсутствии файлов
+    const MEDIA_EXTENSIONS = ['.jpg', '.png', '.webp', '.jpeg'];
+    const resolvedMediaMap = {};
+
+    function probeSingleImage(url) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(url);
+        img.onerror = () => resolve(null);
+        img.src = url;
+      });
+    }
+
+    async function resolveBaseMedia(baseName) {
+      for (const ext of MEDIA_EXTENSIONS) {
+        const candidate = `${baseName}${ext}`;
+        const foundUrl = await probeSingleImage(candidate);
+        if (foundUrl) {
+          resolvedMediaMap[baseName] = foundUrl;
+          renderExercises();
+          return;
+        }
+      }
+    }
+
+    function probeAllEquipmentMedia() {
+      const uniqueFiles = new Set();
+      Object.values(PROGRAM_DATA).forEach(day => {
+        day.exercises.forEach(ex => {
+          if (Array.isArray(ex.media)) {
+            ex.media.forEach(item => {
+              if (item && item.file) uniqueFiles.add(item.file);
+            });
+          }
+        });
+      });
+
+      uniqueFiles.forEach(baseName => {
+        resolveBaseMedia(baseName);
+      });
+    }
+
+    function getResolvedExerciseMedia(ex) {
+      if (!Array.isArray(ex.media)) return [];
+      const slides = [];
+      ex.media.forEach(item => {
+        const url = resolvedMediaMap[item.file];
+        if (url) {
+          slides.push({
+            url,
+            caption: item.caption || ex.equipment
+          });
+        }
+      });
+      return slides;
+    }
+
+    // Состояние модального лайтбокса и галереи
+    let lightboxState = {
+      isOpen: false,
+      slides: [],
+      currentIndex: 0
+    };
+
+    function updateLightboxView() {
+      const { slides, currentIndex } = lightboxState;
+      if (!slides.length) return;
+
+      const currentSlide = slides[currentIndex] || slides[0];
+      const imgEl = document.getElementById('lightboxImg');
+      const captionEl = document.getElementById('lightboxCaption');
+      const prevBtn = document.getElementById('lightboxPrevBtn');
+      const nextBtn = document.getElementById('lightboxNextBtn');
+      const paginationEl = document.getElementById('lightboxPagination');
+      const dotsEl = document.getElementById('lightboxDots');
+      const counterEl = document.getElementById('lightboxCounter');
+
+      imgEl.src = currentSlide.url;
+      imgEl.alt = currentSlide.caption;
+      captionEl.textContent = currentSlide.caption;
+
+      const hasMultiple = slides.length > 1;
+      if (hasMultiple) {
+        prevBtn.classList.remove('hidden');
+        prevBtn.classList.add('flex');
+        nextBtn.classList.remove('hidden');
+        nextBtn.classList.add('flex');
+        paginationEl.classList.remove('hidden');
+        paginationEl.classList.add('flex');
+
+        dotsEl.innerHTML = slides.map((_, idx) => {
+          const isActive = idx === currentIndex;
+          return `<span class="h-1.5 rounded-full transition-all duration-150 ${
+            isActive ? 'w-4 bg-muted-steel' : 'w-1.5 bg-base-border'
+          }"></span>`;
+        }).join('');
+
+        counterEl.textContent = `${currentIndex + 1} / ${slides.length}`;
+      } else {
+        prevBtn.classList.add('hidden');
+        prevBtn.classList.remove('flex');
+        nextBtn.classList.add('hidden');
+        nextBtn.classList.remove('flex');
+        paginationEl.classList.add('hidden');
+        paginationEl.classList.remove('flex');
+      }
+    }
+
+    function openEquipmentLightbox(slides) {
+      if (!slides || !slides.length) return;
+      lightboxState.isOpen = true;
+      lightboxState.slides = slides;
+      lightboxState.currentIndex = 0;
+
+      const overlay = document.getElementById('equipmentLightbox');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      updateLightboxView();
+    }
+
+    function closeEquipmentLightbox() {
+      lightboxState.isOpen = false;
+      lightboxState.slides = [];
+      lightboxState.currentIndex = 0;
+
+      const overlay = document.getElementById('equipmentLightbox');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+
+    function stepLightboxSlide(delta) {
+      const len = lightboxState.slides.length;
+      if (len <= 1) return;
+      lightboxState.currentIndex = (lightboxState.currentIndex + delta + len) % len;
+      updateLightboxView();
+    }
 
     let state = {
       activeDay: 'push',
@@ -616,7 +972,7 @@
     async function initStorage() {
       let localData = null;
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
         if (raw) localData = JSON.parse(raw);
       } catch (_) {}
 
@@ -655,10 +1011,12 @@
         updatedAt: state.updatedAt
       };
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        const serialized = JSON.stringify(payload);
+        localStorage.setItem(STORAGE_KEY, serialized);
+        localStorage.setItem(LEGACY_STORAGE_KEY, serialized);
       } catch (_) {}
       saveToIdb(payload).finally(() => {
-        setTimeout(() => updateSaveIndicator(true), 180);
+        setTimeout(() => updateSaveIndicator(true), 160);
       });
     }
 
@@ -796,7 +1154,7 @@
           const idx = Number(btn.getAttribute('data-week'));
           const prevIdx = state.weeksByDay[state.activeDay] ?? 0;
           if (!Number.isNaN(idx) && prevIdx !== idx) {
-            // При возврате с Нед. 5 (или Нед. 4) на Нед. 1 запоминаем прошлые веса как ориентир
+            // При возврате с Нед. 5 (или Нед. 4) на Нед. 1 сохраняем прошлые веса как ориентир
             if (idx === 0 && prevIdx >= 3) {
               const day = PROGRAM_DATA[state.activeDay];
               day.exercises.forEach(ex => {
@@ -822,6 +1180,9 @@
       const current = parseFloat(raw);
       const base = Number.isNaN(current) ? 0 : current;
       const next = Math.max(0, Math.round((base + delta) * 100) / 100);
+      if (state.weights[key] && Number(state.weights[key]) !== next) {
+        state.prevWeights[key] = state.weights[key];
+      }
       state.weights[key] = next === 0 ? '' : String(next);
       saveState();
 
@@ -832,6 +1193,13 @@
     function renderExercises() {
       const day = PROGRAM_DATA[state.activeDay];
       const weekIdx = state.weeksByDay[state.activeDay] ?? 0;
+
+      // Запоминаем активное поле ввода веса, если пользователь в этот момент печатает
+      const activeEl = document.activeElement;
+      const focusedWeightKey = activeEl && activeEl.classList && activeEl.classList.contains('weight-input')
+        ? activeEl.getAttribute('data-weight-key')
+        : null;
+      const selectionStart = focusedWeightKey ? activeEl.selectionStart : null;
 
       document.getElementById('dayTitle').textContent = day.title;
       document.getElementById('daySubtitle').textContent = day.subtitle;
@@ -847,6 +1215,32 @@
         const savedWeight = state.weights[key] ?? '';
         const prevWeight = state.prevWeights[key] ?? '';
         const currentReps = ex.weeks[weekIdx] || ex.weeks[0];
+        const availableSlides = getResolvedExerciseMedia(ex);
+        const hasMedia = availableSlides.length > 0;
+
+        const equipmentBadgeHtml = hasMedia
+          ? `<button
+               type="button"
+               data-open-media="${ex.num}"
+               title="Посмотреть фото тренажёра"
+               class="equipment-media-btn inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg hover:bg-base-elevated active:scale-95 text-ink-primary border border-muted-steelBorder/60 transition"
+             >
+               <svg class="w-3 h-3 text-muted-steel shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+               </svg>
+               <span>${ex.equipment}</span>
+             </button>`
+          : `<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-base-borderSoft">
+               ${ex.equipment}
+             </span>`;
+
+        const stepsHtml = ex.steps.map(step => `
+          <div class="leading-relaxed">
+            <span class="font-semibold text-ink-primary">${step.label}</span>
+            <span class="text-ink-secondary">${step.text}</span>
+          </div>
+        `).join('');
 
         return `
           <article
@@ -857,7 +1251,7 @@
                 : 'bg-base-card border-base-border'
             }"
           >
-            <!-- Верх карточки: Галочка (44x44) + Название + Иконка (i) -->
+            <!-- Верх карточки: Галочка + Название + Кнопка техники -->
             <div class="p-3.5 pb-2.5 flex items-start gap-3">
               <button
                 type="button"
@@ -891,19 +1285,20 @@
                     type="button"
                     data-toggle-details="${key}"
                     aria-expanded="${isDetailsOpen}"
-                    title="Техника и мышцы"
-                    class="details-btn shrink-0 w-7 h-7 rounded-lg bg-base-bg border border-base-border flex items-center justify-center text-ink-secondary hover:text-ink-primary active:scale-90 transition ${
-                      isDetailsOpen ? 'border-muted-steelBorder text-muted-steel' : ''
+                    title="Техника выполнения"
+                    class="details-btn shrink-0 px-2 h-7 rounded-lg bg-base-bg border border-base-border flex items-center gap-1 text-[11px] font-medium text-ink-secondary hover:text-ink-primary active:scale-90 transition ${
+                      isDetailsOpen ? 'border-muted-steelBorder text-muted-steel bg-muted-steelBg' : ''
                     }"
                   >
-                    <span class="font-mono text-xs font-bold leading-none">i</span>
+                    <span>Техника</span>
+                    <svg class="w-3 h-3 transition-transform duration-200 ${isDetailsOpen ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-base-borderSoft">
-                    ${ex.equipment}
-                  </span>
+                  ${equipmentBadgeHtml}
                   <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-muted-steelBg text-muted-steel border border-muted-steelBorder">
                     ${ex.sets} подх.
                   </span>
@@ -968,17 +1363,16 @@
               </div>
             </div>
 
-            <!-- Сворачиваемая подсказка по технике -->
+            <!-- Сворачиваемый аккордеон пошаговой техники -->
             <div id="details_${key}" class="accordion-content ${isDetailsOpen ? 'open' : ''}">
               <div class="accordion-inner">
-                <div class="px-3.5 pb-3 pt-2.5 text-xs leading-relaxed text-ink-secondary space-y-1.5 border-t border-base-borderSoft bg-base-bg/60">
-                  <div>
-                    <span class="text-ink-primary font-medium">Целевые мышцы:</span>
-                    <span class="text-muted-steel">${ex.muscles}</span>
+                <div class="px-3.5 pb-3.5 pt-2.5 text-xs space-y-2 border-t border-base-borderSoft bg-base-bg/65">
+                  <div class="flex items-center gap-1.5 text-[11px]">
+                    <span class="text-ink-secondary">Целевые мышцы:</span>
+                    <span class="font-medium text-muted-steel">${ex.muscles}</span>
                   </div>
-                  <div>
-                    <span class="text-ink-primary font-medium">Техника:</span>
-                    <span>${ex.technique}</span>
+                  <div class="space-y-1.5 pt-1 border-t border-base-borderSoft/70">
+                    ${stepsHtml}
                   </div>
                 </div>
               </div>
@@ -986,6 +1380,21 @@
           </article>
         `;
       }).join('');
+
+      // Обработчики открытия фото тренажёра
+      listEl.querySelectorAll('.equipment-media-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const exNum = Number(btn.getAttribute('data-open-media'));
+          const exercise = day.exercises.find(item => item.num === exNum);
+          if (exercise) {
+            const slides = getResolvedExerciseMedia(exercise);
+            if (slides.length > 0) {
+              openEquipmentLightbox(slides);
+            }
+          }
+        });
+      });
 
       listEl.querySelectorAll('.done-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -999,7 +1408,7 @@
           saveState();
           renderExercises();
 
-          // Автосброс всех галочек дня, когда отмечено последнее упражнение
+          // Автосброс всех галочек дня при закрытии последнего упражнения
           const currentDay = PROGRAM_DATA[state.activeDay];
           const allChecked = currentDay.exercises.every(ex => !!state.completed[`${currentDay.id}_${ex.num}`]);
 
@@ -1022,9 +1431,12 @@
           const key = btn.getAttribute('data-toggle-details');
           state.openDetails[key] = !state.openDetails[key];
           const panel = document.getElementById(`details_${key}`);
+          const chevron = btn.querySelector('svg');
           if (panel) panel.classList.toggle('open', state.openDetails[key]);
           btn.classList.toggle('border-muted-steelBorder', state.openDetails[key]);
           btn.classList.toggle('text-muted-steel', state.openDetails[key]);
+          btn.classList.toggle('bg-muted-steelBg', state.openDetails[key]);
+          if (chevron) chevron.classList.toggle('rotate-180', state.openDetails[key]);
           btn.setAttribute('aria-expanded', String(!!state.openDetails[key]));
         });
       });
@@ -1040,12 +1452,33 @@
       });
 
       listEl.querySelectorAll('.weight-input').forEach(input => {
+        input.addEventListener('focus', () => {
+          const key = input.getAttribute('data-weight-key');
+          if (key && state.weights[key]) {
+            input.dataset.beforeEdit = state.weights[key];
+          }
+        });
         input.addEventListener('input', (e) => {
           const key = input.getAttribute('data-weight-key');
+          const before = input.dataset.beforeEdit;
+          if (before && before !== e.target.value && e.target.value.trim() !== '') {
+            state.prevWeights[key] = before;
+          }
           state.weights[key] = e.target.value;
           saveState();
         });
       });
+
+      // Восстанавливаем фокус при асинхронной дозагрузке картинок
+      if (focusedWeightKey) {
+        const restoredInput = document.getElementById(`weight_${focusedWeightKey}`);
+        if (restoredInput) {
+          restoredInput.focus();
+          if (typeof selectionStart === 'number') {
+            try { restoredInput.setSelectionRange(selectionStart, selectionStart); } catch (_) {}
+          }
+        }
+      }
     }
 
     function renderMatrix() {
@@ -1114,9 +1547,11 @@
       renderMatrix();
     }
 
-    // Беззвучный таймер отдыха (только визуал + виброотклик, без звука)
+    // Беззвучный таймер отдыха с точным расчётом по метке времени (не сбивается при блокировке экрана iPhone)
     let restInterval = null;
-    let remainingSec = 0;
+    let timerEndTimestamp = 0;
+    let pausedRemainingSec = 0;
+    let isTimerRunning = false;
 
     function formatSeconds(sec) {
       const m = Math.floor(sec / 60);
@@ -1124,58 +1559,167 @@
       return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
+    function syncTimerTick() {
+      if (!isTimerRunning) return;
+      const diffMs = timerEndTimestamp - Date.now();
+      const remSec = Math.max(0, Math.ceil(diffMs / 1000));
+
+      const display = document.getElementById('timerDisplay');
+      const label = document.getElementById('timerLabel');
+      const toggleBtn = document.getElementById('timerToggleBtn');
+
+      if (remSec > 0) {
+        display.textContent = formatSeconds(remSec);
+      } else {
+        clearInterval(restInterval);
+        restInterval = null;
+        isTimerRunning = false;
+        pausedRemainingSec = 0;
+        display.textContent = 'ГОТОВО';
+        display.className = 'font-mono text-xs font-bold text-muted-sage px-2.5 py-1.5 rounded-xl bg-muted-sageBg border border-muted-sageBorder min-w-[68px] text-center transition-colors';
+        label.textContent = 'Отдых завершён';
+        toggleBtn.classList.add('hidden');
+        showToast('Отдых завершён — можно делать подход');
+      }
+    }
+
     function stopRestTimer(resetDisplay = true) {
       if (restInterval) {
         clearInterval(restInterval);
         restInterval = null;
       }
+      isTimerRunning = false;
+      timerEndTimestamp = 0;
+      pausedRemainingSec = 0;
+
       const display = document.getElementById('timerDisplay');
       const label = document.getElementById('timerLabel');
-      const stopBtn = document.getElementById('timerStopBtn');
+      const toggleBtn = document.getElementById('timerToggleBtn');
+      const resetBtn = document.getElementById('timerResetBtn');
+
       if (resetDisplay && display) {
-        remainingSec = 0;
         display.textContent = '00:00';
         display.className = 'font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center transition-colors';
       }
-      if (label) label.textContent = 'Отдых (без звука)';
-      if (stopBtn) stopBtn.classList.add('hidden');
+      if (label) label.textContent = 'Отдых';
+      if (toggleBtn) toggleBtn.classList.add('hidden');
+      if (resetBtn) resetBtn.classList.add('hidden');
     }
 
     function startRestTimer(seconds) {
-      stopRestTimer(false);
-      remainingSec = seconds;
+      if (restInterval) {
+        clearInterval(restInterval);
+        restInterval = null;
+      }
+      isTimerRunning = true;
+      pausedRemainingSec = 0;
+      timerEndTimestamp = Date.now() + seconds * 1000;
 
       const display = document.getElementById('timerDisplay');
       const label = document.getElementById('timerLabel');
-      const stopBtn = document.getElementById('timerStopBtn');
+      const toggleBtn = document.getElementById('timerToggleBtn');
+      const resetBtn = document.getElementById('timerResetBtn');
 
-      display.textContent = formatSeconds(remainingSec);
+      display.textContent = formatSeconds(seconds);
       display.className = 'font-mono text-base font-bold text-muted-steel px-2.5 py-1 rounded-xl bg-muted-steelBg border border-muted-steelBorder min-w-[68px] text-center transition-colors';
       label.textContent = 'Идёт отдых...';
-      stopBtn.classList.remove('hidden');
+      toggleBtn.textContent = 'Пауза';
+      toggleBtn.classList.remove('hidden');
+      resetBtn.classList.remove('hidden');
 
-      restInterval = setInterval(() => {
-        remainingSec -= 1;
-        if (remainingSec > 0) {
-          display.textContent = formatSeconds(remainingSec);
-        } else {
-          clearInterval(restInterval);
-          restInterval = null;
-          remainingSec = 0;
-          display.textContent = 'ГОТОВО';
-          display.className = 'font-mono text-xs font-bold text-muted-sage px-2.5 py-1.5 rounded-xl bg-muted-sageBg border border-muted-sageBorder min-w-[68px] text-center transition-colors';
-          label.textContent = 'Время вышло — к подходу';
-          if (navigator.vibrate) {
-            try { navigator.vibrate([180, 90, 180]); } catch (_) {}
-          }
-          showToast('Отдых завершён — можно делать подход');
-        }
-      }, 1000);
+      restInterval = setInterval(syncTimerTick, 250);
+    }
+
+    function togglePauseTimer() {
+      const toggleBtn = document.getElementById('timerToggleBtn');
+      const label = document.getElementById('timerLabel');
+
+      if (isTimerRunning) {
+        pausedRemainingSec = Math.max(1, Math.ceil((timerEndTimestamp - Date.now()) / 1000));
+        isTimerRunning = false;
+        clearInterval(restInterval);
+        restInterval = null;
+        toggleBtn.textContent = 'Старт';
+        label.textContent = 'На паузе';
+      } else if (pausedRemainingSec > 0) {
+        startRestTimer(pausedRemainingSec);
+      }
+    }
+
+    // При возврате с заблокированного экрана iPhone сразу пересчитываем остаток времени
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && isTimerRunning) {
+        syncTimerTick();
+      }
+    });
+
+    function copyTextFallback(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Бэкап скопирован в буфер обмена');
+      } catch (_) {
+        showToast('Не удалось скопировать');
+      }
+      document.body.removeChild(ta);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
       await initStorage();
       renderAll();
+      probeAllEquipmentMedia();
+
+      // Управление лайтбоксом тренажёров
+      const lightboxOverlay = document.getElementById('equipmentLightbox');
+      const lightboxCard = document.getElementById('lightboxCard');
+      const lightboxStage = document.getElementById('lightboxImageStage');
+
+      lightboxOverlay.addEventListener('click', (e) => {
+        if (e.target === lightboxOverlay) {
+          closeEquipmentLightbox();
+        }
+      });
+
+      lightboxCard.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      document.getElementById('lightboxCloseBtn').addEventListener('click', closeEquipmentLightbox);
+      document.getElementById('lightboxPrevBtn').addEventListener('click', () => stepLightboxSlide(-1));
+      document.getElementById('lightboxNextBtn').addEventListener('click', () => stepLightboxSlide(1));
+
+      // Горизонтальный свайп пальцем в галерее
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      lightboxStage.addEventListener('touchstart', (e) => {
+        if (!e.touches || !e.touches.length) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      lightboxStage.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || !e.changedTouches.length) return;
+        const deltaX = e.changedTouches[0].clientX - touchStartX;
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+
+        if (Math.abs(deltaX) > 36 && Math.abs(deltaX) > Math.abs(deltaY)) {
+          stepLightboxSlide(deltaX < 0 ? 1 : -1);
+        }
+      }, { passive: true });
+
+      // Закрытие по Esc и переключение стрелками на ПК
+      document.addEventListener('keydown', (e) => {
+        if (!lightboxState.isOpen) return;
+        if (e.key === 'Escape') closeEquipmentLightbox();
+        if (e.key === 'ArrowLeft') stepLightboxSlide(-1);
+        if (e.key === 'ArrowRight') stepLightboxSlide(1);
+      });
 
       // Спойлер памятки
       const toggleGuideBtn = document.getElementById('toggleGuideBtn');
@@ -1202,10 +1746,10 @@
         });
         saveState();
         renderExercises();
-        showToast(hadAny ? `Отметки для «${day.tabLabel}» сброшены` : 'Все галочки дня уже сняты');
+        showToast(hadAny ? `Галочки для «${day.tabLabel}» сброшены` : 'Все галочки дня уже сняты');
       });
 
-      // Сброс всех введённых весов (в 2 нажатия, чтобы не задеть случайно в зале)
+      // Сброс всех весов в 2 нажатия
       const resetWeightBtn = document.getElementById('resetWeightBtn');
       const resetWeightLabel = document.getElementById('resetWeightLabel');
       resetWeightBtn.addEventListener('click', () => {
@@ -1238,47 +1782,48 @@
         showToast('Все веса очищены');
       });
 
-      // Экспорт JSON бэкапа
+      // Экспорт компактной строки JSON в буфер обмена
       document.getElementById('exportBackupBtn').addEventListener('click', () => {
-        try {
-          const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `ppl-backup-${new Date().toISOString().slice(0, 10)}.json`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          showToast('Резервная копия скачана');
-        } catch (_) {
-          showToast('Не удалось скачать бэкап');
+        const exportPayload = JSON.stringify({
+          activeDay: state.activeDay,
+          weeksByDay: state.weeksByDay,
+          weights: state.weights,
+          prevWeights: state.prevWeights,
+          completed: state.completed
+        });
+        copyTextFallback(exportPayload);
+      });
+
+      // Встроенная панель импорта
+      const importPanel = document.getElementById('importPanel');
+      const importCodeInput = document.getElementById('importCodeInput');
+      document.getElementById('toggleImportBoxBtn').addEventListener('click', () => {
+        const isOpen = importPanel.classList.toggle('open');
+        if (isOpen) {
+          setTimeout(() => importCodeInput.focus(), 120);
         }
       });
 
-      // Импорт JSON бэкапа
-      const importInput = document.getElementById('importFileInput');
-      document.getElementById('importBackupBtn').addEventListener('click', () => importInput.click());
-      importInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const parsed = JSON.parse(String(reader.result));
-            applyLoadedData(parsed);
-            saveState();
-            renderAll();
-            showToast('Веса и прогресс восстановлены');
-          } catch (_) {
-            showToast('Ошибка чтения файла бэкапа');
-          }
-          importInput.value = '';
-        };
-        reader.readAsText(file);
+      document.getElementById('applyImportBtn').addEventListener('click', () => {
+        const raw = importCodeInput.value.trim();
+        if (!raw) {
+          showToast('Вставь строку бэкапа в поле');
+          return;
+        }
+        try {
+          const parsed = JSON.parse(raw);
+          applyLoadedData(parsed);
+          saveState();
+          renderAll();
+          importCodeInput.value = '';
+          importPanel.classList.remove('open');
+          showToast('Веса и прогресс восстановлены');
+        } catch (_) {
+          showToast('Неверный формат строки бэкапа');
+        }
       });
 
-      // Кнопки беззвучного таймера отдыха
+      // Кнопки таймера отдыха
       document.querySelectorAll('.timer-preset-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const sec = Number(btn.getAttribute('data-timer-sec'));
@@ -1286,7 +1831,8 @@
         });
       });
 
-      document.getElementById('timerStopBtn').addEventListener('click', () => stopRestTimer(true));
+      document.getElementById('timerToggleBtn').addEventListener('click', togglePauseTimer);
+      document.getElementById('timerResetBtn').addEventListener('click', () => stopRestTimer(true));
     });
   </script>
 </body>
