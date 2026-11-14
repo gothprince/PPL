@@ -334,7 +334,7 @@
       id="lightboxImg"
       src=""
       alt=""
-      class="max-w-[90vw] max-h-[72vh] object-contain rounded-2xl select-none shadow-2xl"
+      class="max-h-[72vh] max-w-[92vw] object-contain rounded-xl select-none shadow-2xl"
     />
 
     <!-- Стрелка вправо (появляется только при 2+ фото) -->
@@ -350,7 +350,7 @@
     </button>
 
     <!-- Название тренажёра по центру внизу экрана прямо поверх затемнения -->
-    <div class="fixed bottom-8 left-0 right-0 px-6 text-center pointer-events-none z-20">
+    <div class="fixed bottom-7 left-0 right-0 px-6 text-center pointer-events-none z-20">
       <div id="lightboxCaption" class="text-base sm:text-lg font-semibold text-ink-primary"></div>
 
       <!-- Индикатор слайдов (показывается только при 2+ фото) -->
@@ -748,47 +748,47 @@
 
     function getExerciseMediaSpecs(dayId, ex) {
       if (dayId === 'legs' && ex.num === 4) {
-        return [{ file: 'leg_ext', caption: 'Разгибания ног сидя' }];
+        return [{ key: 'leg_ext', label: 'Разгибания ног сидя' }];
       }
       if (dayId === 'legs' && ex.num === 5) {
-        return [{ file: 'leg_curl', caption: 'Сгибания ног лёжа / сидя' }];
+        return [{ key: 'leg_curl', label: 'Сгибания ног' }];
       }
 
       switch (ex.equipment) {
         case 'Машина Смита':
-          return [{ file: 'smith', caption: 'Машина Смита' }];
+          return [{ key: 'smith', label: 'Машина Смита' }];
         case 'Кроссовер / Pec Deck':
           return [
-            { file: 'crossover', caption: 'Кроссовер' },
-            { file: 'pecdeck', caption: 'Pec Deck («Бабочка»)' }
+            { key: 'crossover', label: 'Кроссовер' },
+            { key: 'pecdeck', label: 'Pec Deck («Бабочка»)' }
           ];
         case 'Тренажёр Хаммер':
           return [
-            { file: 'hammer_shoulder', caption: 'Тренажёр Хаммер (плечи)' },
-            { file: 'hammer', caption: 'Тренажёр Хаммер' }
+            { key: 'hammer_shoulder', label: 'Тренажёр Хаммер (плечи)' },
+            { key: 'hammer', label: 'Тренажёр Хаммер' }
           ];
         case 'Нижний блок':
-          return [{ file: 'cable_low', caption: 'Нижний блок' }];
+          return [{ key: 'cable_low', label: 'Нижний блок' }];
         case 'Верхний блок':
-          return [{ file: 'cable_high', caption: 'Верхний блок' }];
+          return [{ key: 'cable_high', label: 'Верхний блок' }];
         case 'Блок':
-          return [{ file: 'cable_high', caption: 'Блок' }];
+          return [{ key: 'cable_high', label: 'Блок' }];
         case 'Машина Смита / Хаммер':
           return [
-            { file: 'smith', caption: 'Машина Смита' },
-            { file: 'hammer_row', caption: 'Хаммер с упором в грудь' },
-            { file: 'hammer', caption: 'Тренажёр Хаммер' }
+            { key: 'smith', label: 'Машина Смита' },
+            { key: 'hammer_row', label: 'Хаммер с упором в грудь' },
+            { key: 'hammer', label: 'Тренажёр Хаммер' }
           ];
         case 'Горизонтальный блок':
-          return [{ file: 'cable_row', caption: 'Горизонтальный блок' }];
+          return [{ key: 'cable_row', label: 'Горизонтальный блок' }];
         case 'Скамья Скотта':
-          return [{ file: 'scott', caption: 'Скамья Скотта' }];
+          return [{ key: 'scott', label: 'Скамья Скотта' }];
         case 'Платформа':
-          return [{ file: 'leg_press', caption: 'Платформа (жим ногами)' }];
+          return [{ key: 'leg_press', label: 'Платформа (жим ногами)' }];
         case 'Тренажёр / Смит':
           return [
-            { file: 'calf_machine', caption: 'Тренажёр на голень' },
-            { file: 'smith', caption: 'Машина Смита' }
+            { key: 'calf_machine', label: 'Тренажёр на голень' },
+            { key: 'smith', label: 'Машина Смита' }
           ];
         default:
           return [];
@@ -817,16 +817,16 @@
     }
 
     function probeAllEquipmentMedia() {
-      const uniqueFiles = new Set();
+      const uniqueKeys = new Set();
       Object.entries(PROGRAM_DATA).forEach(([dayId, day]) => {
         day.exercises.forEach(ex => {
           getExerciseMediaSpecs(dayId, ex).forEach(spec => {
-            if (spec.file) uniqueFiles.add(spec.file);
+            if (spec.key) uniqueKeys.add(spec.key);
           });
         });
       });
 
-      uniqueFiles.forEach(baseName => {
+      uniqueKeys.forEach(baseName => {
         resolveBaseMedia(baseName);
       });
     }
@@ -835,11 +835,11 @@
       const specs = getExerciseMediaSpecs(dayId, ex);
       const slides = [];
       specs.forEach(spec => {
-        const url = resolvedMediaMap[spec.file];
+        const url = resolvedMediaMap[spec.key];
         if (url) {
           slides.push({
             url,
-            caption: spec.caption || ex.equipment
+            caption: spec.label || ex.equipment
           });
         }
       });
@@ -1247,7 +1247,7 @@
           ? `<button
                type="button"
                data-open-media="${ex.num}"
-               class="equipment-media-btn inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-ink-dim/45 hover:border-ink-secondary/60 cursor-pointer active:scale-95 transition"
+               class="equipment-media-btn inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-ink-dim/45 hover:border-muted-steelBorder cursor-pointer active:scale-95 transition"
              >
                ${ex.equipment}
              </button>`
@@ -1289,8 +1289,7 @@
                     ? `<svg class="w-5 h-5 text-muted-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                        </svg>`
-                    : `<span class="font-mono text-sm font-bold leading-none text-ink-primary">${ex.num}</span>
-                       <span class="w-3 h-0.5 rounded-full bg-base-border mt-1"></span>`
+                    : `<span class="font-mono text-sm font-bold leading-none text-ink-primary">${ex.num}</span>`
                 }
               </button>
 
