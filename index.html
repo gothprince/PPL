@@ -95,8 +95,8 @@
 </head>
 <body class="min-h-screen antialiased">
 
-  <!-- Главный контейнер -->
-  <div class="max-w-[540px] mx-auto min-h-screen flex flex-col pb-32 sm:pb-24">
+  <!-- Главный контейнер с запасом снизу под двухстрочный активный таймер на мобильных экранах -->
+  <div class="max-w-[540px] mx-auto min-h-screen flex flex-col pb-32">
 
     <!-- Липкая верхняя панель -->
     <header class="sticky top-0 z-30 bg-base-bg/95 backdrop-blur-md border-b border-base-border px-3.5 pt-3 pb-3">
@@ -276,25 +276,33 @@
     </main>
   </div>
 
-  <!-- Нижний таймер отдыха -->
+  <!-- Нижний адаптивный таймер отдыха -->
   <div id="restTimerBar" class="fixed bottom-0 left-0 right-0 z-30 bg-base-card/95 backdrop-blur-md border-t border-base-border px-3.5 py-2.5">
-    <div class="max-w-[540px] mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center justify-between sm:justify-start gap-2 min-w-0">
-        <div id="timerDisplay" class="font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center transition-colors">
-          00:00
+    <div id="timerBarInner" class="max-w-[540px] mx-auto flex items-center justify-between gap-2">
+      <!-- Верхняя строка (в активном режиме на мобильном занимает всю ширину; в покое стоит слева) -->
+      <div id="timerTopRow" class="flex items-center justify-between gap-2 min-w-0 flex-1 sm:flex-initial">
+        <div class="flex items-center gap-2 min-w-0">
+          <div id="timerDisplay" class="font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center shrink-0 transition-colors">
+            00:00
+          </div>
+          <span id="timerLabel" class="text-[11px] text-ink-secondary truncate">Отдых</span>
         </div>
-        <span id="timerLabel" class="text-[11px] text-ink-secondary truncate">Отдых</span>
+
+        <!-- Кнопки управления активным таймером (-15с, +15с, Пауза, ✕) -->
+        <div id="timerActiveControls" class="hidden items-center gap-1.5 flex-nowrap shrink-0">
+          <button id="timerSub15Btn" type="button" class="px-2 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated border border-base-border text-xs font-mono font-semibold text-ink-secondary active:scale-95 transition">-15с</button>
+          <button id="timerAdd15Btn" type="button" class="px-2 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated border border-base-border text-xs font-mono font-semibold text-ink-secondary active:scale-95 transition">+15с</button>
+          <button id="timerToggleBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-muted-steelBg border border-muted-steelBorder text-xs font-semibold text-ink-primary active:scale-95 transition">Пауза</button>
+          <button id="timerResetBtn" type="button" class="px-2 py-1.5 rounded-xl bg-base-elevated border border-base-border text-xs font-semibold text-ink-secondary active:scale-95 transition">✕</button>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-1.5 w-full sm:w-auto sm:shrink-0">
-        <button type="button" data-timer-sec="60" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">60с</button>
-        <button type="button" data-timer-sec="90" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">90с</button>
-        <button type="button" data-timer-sec="120" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">2м</button>
-        <button type="button" data-timer-sec="180" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">3м</button>
-        <button id="timerSub15Btn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated border border-base-border text-xs font-mono font-semibold text-ink-secondary active:scale-95 transition">-15с</button>
-        <button id="timerAdd15Btn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated border border-base-border text-xs font-mono font-semibold text-ink-secondary active:scale-95 transition">+15с</button>
-        <button id="timerToggleBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-muted-steelBg border border-muted-steelBorder text-xs font-semibold text-ink-primary active:scale-95 transition">Пауза</button>
-        <button id="timerResetBtn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-elevated border border-base-border text-xs font-semibold text-ink-secondary active:scale-95 transition">✕</button>
+      <!-- 4 кнопки пресетов (в покое — справа в той же строке; при активном таймере на мобильном — второй строкой grid-cols-4) -->
+      <div id="timerPresetsGroup" class="flex items-center gap-1.5 shrink-0">
+        <button type="button" data-timer-sec="60" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary text-center transition">60с</button>
+        <button type="button" data-timer-sec="90" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary text-center transition">90с</button>
+        <button type="button" data-timer-sec="120" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary text-center transition">2м</button>
+        <button type="button" data-timer-sec="180" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary text-center transition">3м</button>
       </div>
     </div>
   </div>
@@ -366,7 +374,7 @@
   <!-- Всплывающее уведомление -->
   <div
     id="toast"
-    class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-base-elevated border border-base-border text-xs font-medium text-ink-primary shadow-xl opacity-0 pointer-events-none transition-all duration-200 translate-y-2"
+    class="fixed bottom-24 sm:bottom-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-base-elevated border border-base-border text-xs font-medium text-ink-primary shadow-xl opacity-0 pointer-events-none transition-all duration-200 translate-y-2"
   >
     Готово
   </div>
@@ -467,7 +475,7 @@
           {
             num: 7,
             name: 'Разгибания на трицепс из-за головы с канатом',
-            equipment: 'Блок',
+            equipment: 'Нижний блок',
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (длинная головка)',
@@ -744,10 +752,9 @@
       return Math.round(isMinutes ? avg * 60 : avg);
     }
 
-    // Конфигурация фото тренажёров и автоопределение форматов (.webp, .jpg, .png, .jpeg)
-    // cable_high привязан ТОЛЬКО к Тяге верхнего блока широким хватом (День 2, упр. 1),
-    // все остальные блочные упражнения используют cable_low
+    // Конфигурация фото тренажёров и автоопределение основного + нумерованных файлов (_1.._5)
     const MEDIA_EXTENSIONS = ['.webp', '.jpg', '.png', '.jpeg'];
+    const MEDIA_SUFFIXES = ['', '_1', '_2', '_3', '_4', '_5'];
     const resolvedMediaMap = {};
 
     function getExerciseMediaSpecs(dayId, ex) {
@@ -811,15 +818,24 @@
       });
     }
 
-    async function resolveBaseMedia(baseName) {
+    async function probeSlotWithExtensions(slotName) {
       for (const ext of MEDIA_EXTENSIONS) {
-        const candidate = `${baseName}${ext}`;
+        const candidate = `${slotName}${ext}`;
         const foundUrl = await probeSingleImage(candidate);
-        if (foundUrl) {
-          resolvedMediaMap[baseName] = foundUrl;
-          renderExercises();
-          return;
-        }
+        if (foundUrl) return foundUrl;
+      }
+      return null;
+    }
+
+    async function resolveBaseMedia(baseName) {
+      // Параллельно проверяем базовый файл (напр. scott.*) и нумерованные (scott_1.* .. scott_5.*)
+      const slotPromises = MEDIA_SUFFIXES.map(suffix => probeSlotWithExtensions(`${baseName}${suffix}`));
+      const results = await Promise.all(slotPromises);
+      const validUrls = results.filter(Boolean);
+
+      if (validUrls.length > 0) {
+        resolvedMediaMap[baseName] = validUrls;
+        renderExercises();
       }
     }
 
@@ -842,11 +858,13 @@
       const specs = getExerciseMediaSpecs(dayId, ex);
       const slides = [];
       specs.forEach(spec => {
-        const url = resolvedMediaMap[spec.key];
-        if (url) {
-          slides.push({
-            url,
-            caption: spec.label || ex.equipment
+        const urls = resolvedMediaMap[spec.key];
+        if (Array.isArray(urls) && urls.length > 0) {
+          urls.forEach(url => {
+            slides.push({
+              url,
+              caption: spec.label || ex.equipment
+            });
           });
         }
       });
@@ -1589,11 +1607,33 @@
       renderMatrix();
     }
 
-    // Таймер отдыха с точным расчётом по метке времени и мягким звуковым/вибро сигналом
+    // Таймер отдыха с адаптивной компоновкой (1 строка в покое / 2 строки на мобильном при запуске)
     let restInterval = null;
     let timerEndTimestamp = 0;
     let pausedRemainingSec = 0;
     let isTimerRunning = false;
+
+    function setTimerBarExpanded(expanded) {
+      const inner = document.getElementById('timerBarInner');
+      const topRow = document.getElementById('timerTopRow');
+      const activeControls = document.getElementById('timerActiveControls');
+      const presetsGroup = document.getElementById('timerPresetsGroup');
+      if (!inner || !topRow || !activeControls || !presetsGroup) return;
+
+      if (expanded) {
+        inner.className = 'max-w-[540px] mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between';
+        topRow.className = 'flex items-center justify-between gap-2 w-full sm:w-auto sm:flex-1 min-w-0';
+        activeControls.classList.remove('hidden');
+        activeControls.classList.add('flex');
+        presetsGroup.className = 'grid grid-cols-4 gap-1.5 w-full sm:flex sm:items-center sm:w-auto sm:shrink-0';
+      } else {
+        inner.className = 'max-w-[540px] mx-auto flex items-center justify-between gap-2';
+        topRow.className = 'flex items-center justify-between gap-2 min-w-0 flex-1 sm:flex-initial';
+        activeControls.classList.add('hidden');
+        activeControls.classList.remove('flex');
+        presetsGroup.className = 'flex items-center gap-1.5 shrink-0';
+      }
+    }
 
     function playFinishSignal() {
       try {
@@ -1648,7 +1688,7 @@
         isTimerRunning = false;
         pausedRemainingSec = 0;
         display.textContent = 'ГОТОВО';
-        display.className = 'font-mono text-xs font-bold text-muted-sage px-2.5 py-1.5 rounded-xl bg-muted-sageBg border border-muted-sageBorder min-w-[68px] text-center transition-colors';
+        display.className = 'font-mono text-xs font-bold text-muted-sage px-2.5 py-1.5 rounded-xl bg-muted-sageBg border border-muted-sageBorder min-w-[68px] text-center shrink-0 transition-colors';
         label.textContent = 'Отдых завершён';
         toggleBtn.classList.add('hidden');
         if (add15Btn) add15Btn.classList.add('hidden');
@@ -1676,13 +1716,14 @@
 
       if (resetDisplay && display) {
         display.textContent = '00:00';
-        display.className = 'font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center transition-colors';
+        display.className = 'font-mono text-base font-bold text-ink-primary px-2.5 py-1 rounded-xl bg-base-bg border border-base-border min-w-[68px] text-center shrink-0 transition-colors';
       }
       if (label) label.textContent = 'Отдых';
       if (toggleBtn) toggleBtn.classList.add('hidden');
       if (resetBtn) resetBtn.classList.add('hidden');
       if (add15Btn) add15Btn.classList.add('hidden');
       if (sub15Btn) sub15Btn.classList.add('hidden');
+      setTimerBarExpanded(false);
     }
 
     function startRestTimer(seconds) {
@@ -1702,13 +1743,14 @@
       const sub15Btn = document.getElementById('timerSub15Btn');
 
       display.textContent = formatSeconds(seconds);
-      display.className = 'font-mono text-base font-bold text-muted-steel px-2.5 py-1 rounded-xl bg-muted-steelBg border border-muted-steelBorder min-w-[68px] text-center transition-colors';
+      display.className = 'font-mono text-base font-bold text-muted-steel px-2.5 py-1 rounded-xl bg-muted-steelBg border border-muted-steelBorder min-w-[68px] text-center shrink-0 transition-colors';
       label.textContent = 'Идёт отдых...';
       toggleBtn.textContent = 'Пауза';
       toggleBtn.classList.remove('hidden');
       resetBtn.classList.remove('hidden');
       if (add15Btn) add15Btn.classList.remove('hidden');
       if (sub15Btn) sub15Btn.classList.remove('hidden');
+      setTimerBarExpanded(true);
 
       restInterval = setInterval(syncTimerTick, 250);
     }
