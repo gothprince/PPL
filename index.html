@@ -1382,7 +1382,7 @@
             </div>
 
             <!-- Блок повторений и управления весом -->
-            <div class="px-3.5 pb-0 grid grid-cols-12 gap-2 items-stretch">
+            <div class="px-3.5 pb-3.5 grid grid-cols-12 gap-2 items-stretch">
               <div class="col-span-6 rounded-xl bg-base-bg border border-base-borderSoft px-3 py-2 flex flex-col justify-center">
                 <span class="text-[10px] font-medium uppercase tracking-wider text-ink-secondary">
                   Повторения (${WEEK_OPTIONS[weekIdx].short})
@@ -1432,16 +1432,17 @@
               </div>
             </div>
 
-            <!-- Целевые мышцы отдельной строкой под сеткой блоков -->
-            <div class="px-3.5 pt-1.5 pb-3 text-[11px] font-medium text-muted-steel leading-tight">
-              ${ex.muscles}
-            </div>
-
             <!-- Сворачиваемый аккордеон техники -->
             <div id="details_${key}" class="accordion-content ${isDetailsOpen ? 'open' : ''}">
               <div class="accordion-inner">
-                <div class="px-3.5 pb-3.5 pt-2.5 text-xs space-y-1.5 border-t border-base-borderSoft bg-base-bg/65">
-                  ${stepsHtml}
+                <div class="px-3.5 pb-3.5 pt-2.5 text-xs space-y-2 border-t border-base-borderSoft bg-base-bg/65">
+                  <div class="flex items-center gap-1.5 text-[11px]">
+                    <span class="text-ink-secondary">Целевые мышцы:</span>
+                    <span class="font-medium text-muted-steel">${ex.muscles}</span>
+                  </div>
+                  <div class="space-y-1.5 pt-1 border-t border-base-borderSoft/70">
+                    ${stepsHtml}
+                  </div>
                 </div>
               </div>
             </div>
