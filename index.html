@@ -297,76 +297,66 @@
     </div>
   </div>
 
-  <!-- Лайтбокс / Свайп-галерея тренажёров -->
+  <!-- Полноэкранный чистый просмотрщик фото тренажёров без чёрных карточек и подложек -->
   <div
     id="equipmentLightbox"
-    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4"
+    class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center"
     role="dialog"
     aria-modal="true"
     aria-labelledby="lightboxCaption"
   >
-    <div
-      id="lightboxCard"
-      class="bg-base-card border border-base-border rounded-2xl overflow-hidden max-w-[440px] w-full shadow-2xl"
+    <!-- Минималистичная кнопка закрытия в правом верхнем углу экрана -->
+    <button
+      id="lightboxCloseBtn"
+      type="button"
+      aria-label="Закрыть просмотр"
+      class="fixed top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-ink-primary/80 hover:text-ink-primary flex items-center justify-center transition"
     >
-      <!-- Контейнер изображения по центру -->
-      <div
-        id="lightboxImageStage"
-        class="bg-base-bg flex items-center justify-center relative min-h-[220px] max-h-[65vh] overflow-hidden"
-      >
-        <!-- Кнопка закрытия в правом верхнем углу -->
-        <button
-          id="lightboxCloseBtn"
-          type="button"
-          aria-label="Закрыть просмотр"
-          class="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-xl bg-base-card/85 hover:bg-base-elevated active:scale-90 border border-base-border text-ink-secondary hover:text-ink-primary flex items-center justify-center transition"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
 
-        <!-- Стрелка влево (для 2+ фото) -->
-        <button
-          id="lightboxPrevBtn"
-          type="button"
-          aria-label="Предыдущее фото"
-          class="hidden absolute left-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-xl bg-base-card/85 hover:bg-base-elevated active:scale-90 border border-base-border text-ink-primary items-center justify-center transition"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+    <!-- Стрелка влево (появляется только при 2+ фото) -->
+    <button
+      id="lightboxPrevBtn"
+      type="button"
+      aria-label="Предыдущее фото"
+      class="hidden fixed left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-ink-primary/85 items-center justify-center transition"
+    >
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
 
-        <img
-          id="lightboxImg"
-          src=""
-          alt=""
-          class="object-contain max-h-[60vh] w-auto mx-auto transition-opacity duration-150"
-        />
+    <!-- Чистое фото строго по центру экрана -->
+    <img
+      id="lightboxImg"
+      src=""
+      alt=""
+      class="max-w-[90vw] max-h-[72vh] object-contain rounded-2xl select-none shadow-2xl"
+    />
 
-        <!-- Стрелка вправо (для 2+ фото) -->
-        <button
-          id="lightboxNextBtn"
-          type="button"
-          aria-label="Следующее фото"
-          class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-xl bg-base-card/85 hover:bg-base-elevated active:scale-90 border border-base-border text-ink-primary items-center justify-center transition"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+    <!-- Стрелка вправо (появляется только при 2+ фото) -->
+    <button
+      id="lightboxNextBtn"
+      type="button"
+      aria-label="Следующее фото"
+      class="hidden fixed right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-ink-primary/85 items-center justify-center transition"
+    >
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
 
-      <!-- Подпись тренажёра по центру снизу -->
-      <div class="px-4 py-3 text-center border-t border-base-borderSoft">
-        <div id="lightboxCaption" class="text-sm sm:text-base font-bold text-ink-primary"></div>
+    <!-- Название тренажёра по центру внизу экрана прямо поверх затемнения -->
+    <div class="fixed bottom-8 left-0 right-0 px-6 text-center pointer-events-none z-20">
+      <div id="lightboxCaption" class="text-base sm:text-lg font-semibold text-ink-primary"></div>
 
-        <!-- Точки и счётчик слайдов (показываются только при 2+ фото) -->
-        <div id="lightboxPagination" class="hidden items-center justify-center gap-2 mt-2">
-          <div id="lightboxDots" class="flex items-center gap-1.5"></div>
-          <span id="lightboxCounter" class="text-[11px] font-mono text-ink-secondary"></span>
-        </div>
+      <!-- Индикатор слайдов (показывается только при 2+ фото) -->
+      <div id="lightboxPagination" class="hidden items-center justify-center gap-2 mt-2">
+        <div id="lightboxDots" class="flex items-center gap-1.5"></div>
+        <span id="lightboxCounter" class="text-[11px] font-mono text-ink-secondary"></span>
       </div>
     </div>
   </div>
@@ -392,7 +382,6 @@
             num: 1,
             name: 'Жим лёжа',
             equipment: 'Машина Смита',
-            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '2.5–3.5 мин',
             muscles: 'Грудь (середина)',
@@ -407,7 +396,6 @@
             num: 2,
             name: 'Жим на наклонной скамье (30°)',
             equipment: 'Машина Смита',
-            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Грудь (верх)',
@@ -422,10 +410,6 @@
             num: 3,
             name: 'Сведения рук (или «Бабочка»)',
             equipment: 'Кроссовер / Pec Deck',
-            media: [
-              { file: 'crossover', caption: 'Кроссовер' },
-              { file: 'pecdeck', caption: 'Pec Deck («Бабочка»)' }
-            ],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Грудь (изоляция)',
@@ -440,10 +424,6 @@
             num: 4,
             name: 'Жим на плечи сидя',
             equipment: 'Тренажёр Хаммер',
-            media: [
-              { file: 'hammer_shoulder', caption: 'Тренажёр Хаммер (плечи)' },
-              { file: 'hammer', caption: 'Тренажёр Хаммер' }
-            ],
             sets: 4,
             rest: '2–3 мин',
             muscles: 'Передняя и средняя дельта',
@@ -458,7 +438,6 @@
             num: 5,
             name: 'Отведения рук в сторону одной рукой',
             equipment: 'Нижний блок',
-            media: [{ file: 'cable_low', caption: 'Нижний блок' }],
             sets: 4,
             rest: '60–90 сек',
             muscles: 'Средняя дельта',
@@ -473,7 +452,6 @@
             num: 6,
             name: 'Разгибания на трицепс с канатом',
             equipment: 'Верхний блок',
-            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (латеральная и медиальная головки)',
@@ -488,7 +466,6 @@
             num: 7,
             name: 'Разгибания на трицепс из-за головы с канатом',
             equipment: 'Блок + канат',
-            media: [{ file: 'cable_high', caption: 'Блок + канат' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Трицепс (длинная головка)',
@@ -512,7 +489,6 @@
             num: 1,
             name: 'Тяга верхнего блока широким хватом',
             equipment: 'Верхний блок',
-            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Широчайшие (ширина спины)',
@@ -527,11 +503,6 @@
             num: 2,
             name: 'Тяга в наклоне (или Хаммер с упором в грудь)',
             equipment: 'Машина Смита / Хаммер',
-            media: [
-              { file: 'smith', caption: 'Машина Смита' },
-              { file: 'hammer_row', caption: 'Хаммер с упором в грудь' },
-              { file: 'hammer', caption: 'Тренажёр Хаммер' }
-            ],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Верх и середина спины (толщина)',
@@ -546,7 +517,6 @@
             num: 3,
             name: 'Горизонтальная тяга сидя (V-рукоять)',
             equipment: 'Горизонтальный блок',
-            media: [{ file: 'cable_row', caption: 'Горизонтальный блок' }],
             sets: 3,
             rest: '2 мин',
             muscles: 'Середина спины, ромбовидные',
@@ -561,7 +531,6 @@
             num: 4,
             name: 'Пуловер с канатной рукоятью',
             equipment: 'Верхний блок',
-            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Широчайшие (изоляция)',
@@ -576,7 +545,6 @@
             num: 5,
             name: 'Face Pulls (тяга каната к лицу)',
             equipment: 'Верхний блок',
-            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 4,
             rest: '60–90 сек',
             muscles: 'Задняя дельта, трапеции, ротаторы плеча',
@@ -591,7 +559,6 @@
             num: 6,
             name: 'Сгибания рук на бицепс',
             equipment: 'Скамья Скотта',
-            media: [{ file: 'scott', caption: 'Скамья Скотта' }],
             sets: 4,
             rest: '1.5–2 мин',
             muscles: 'Бицепс (пик и короткая головка)',
@@ -606,7 +573,6 @@
             num: 7,
             name: 'Сгибания рук на бицепс с прямой рукоятью',
             equipment: 'Нижний блок',
-            media: [{ file: 'cable_low', caption: 'Нижний блок' }],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Бицепс (общий объём)',
@@ -630,7 +596,6 @@
             num: 1,
             name: 'Приседания со штангой на спине',
             equipment: 'Машина Смита',
-            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '3–3.5 мин',
             muscles: 'Квадрицепсы, ягодицы, приводящие',
@@ -645,7 +610,6 @@
             num: 2,
             name: 'Румынская тяга (замена: гиперэкстензия 4×10–15 или +2–3 подхода сгибаний)',
             equipment: 'Машина Смита',
-            media: [{ file: 'smith', caption: 'Машина Смита' }],
             sets: 4,
             rest: '2.5–3 мин',
             muscles: 'Бицепс бедра, ягодицы, разгибатели',
@@ -660,7 +624,6 @@
             num: 3,
             name: 'Жим ногами (наклонный или горизонтальный)',
             equipment: 'Платформа',
-            media: [{ file: 'leg_press', caption: 'Платформа (жим ногами)' }],
             sets: 3,
             rest: '2 мин',
             muscles: 'Квадрицепсы, ягодицы',
@@ -675,7 +638,6 @@
             num: 4,
             name: 'Разгибания ног сидя',
             equipment: 'Тренажёр',
-            media: [{ file: 'leg_ext', caption: 'Тренажёр (разгибания ног)' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Квадрицепсы (изоляция)',
@@ -690,7 +652,6 @@
             num: 5,
             name: 'Сгибания ног лёжа / сидя',
             equipment: 'Тренажёр',
-            media: [{ file: 'leg_curl', caption: 'Тренажёр (сгибания ног)' }],
             sets: 3,
             rest: '90 сек',
             muscles: 'Бицепс бедра (изоляция)',
@@ -705,10 +666,6 @@
             num: 6,
             name: 'Подъёмы на носки стоя',
             equipment: 'Тренажёр / Смит',
-            media: [
-              { file: 'calf_machine', caption: 'Тренажёр на голень' },
-              { file: 'smith', caption: 'Машина Смита' }
-            ],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Икроножные мышцы',
@@ -723,7 +680,6 @@
             num: 7,
             name: 'Скручивания в блоке',
             equipment: 'Блок',
-            media: [{ file: 'cable_high', caption: 'Верхний блок' }],
             sets: 2,
             rest: '60–90 сек',
             muscles: 'Прямая мышца живота (пресс)',
@@ -738,7 +694,6 @@
             num: 8,
             name: 'Добивка: молотковые сгибания с канатом',
             equipment: 'Нижний блок',
-            media: [{ file: 'cable_low', caption: 'Нижний блок' }],
             sets: 3,
             rest: '60–90 сек',
             muscles: 'Бицепс, брахиалис, предплечья',
@@ -766,9 +721,63 @@
     const IDB_NAME = 'PPLTrackerDB';
     const IDB_STORE = 'state_store';
 
-    // Автоопределение доступных картинок тренажёров без ошибок при отсутствии файлов
-    const MEDIA_EXTENSIONS = ['.jpg', '.png', '.webp', '.jpeg'];
+    // Справочник названий тренажёров и автопоиск загруженных изображений в репозитории
+    const MACHINE_CATALOG = {
+      smith: 'Машина Смита',
+      crossover: 'Кроссовер',
+      pecdeck: 'Pec Deck («Бабочка»)',
+      hammer_shoulder: 'Тренажёр Хаммер (плечи)',
+      hammer_row: 'Хаммер с упором в грудь',
+      hammer: 'Тренажёр Хаммер',
+      cable_low: 'Нижний блок',
+      cable_high: 'Верхний блок',
+      cable_row: 'Горизонтальный блок',
+      scott: 'Скамья Скотта',
+      leg_press: 'Платформа (жим ногами)',
+      leg_ext: 'Разгибания ног сидя',
+      leg_curl: 'Сгибания ног лёжа / сидя',
+      calf_machine: 'Тренажёр на голень'
+    };
+
+    const MEDIA_EXTENSIONS = ['.webp', '.jpg', '.png', '.jpeg'];
     const resolvedMediaMap = {};
+
+    function getCandidateMachineKeys(dayId, ex) {
+      const exKey = `${dayId}_${ex.num}`;
+      if (ex.equipment === 'Тренажёр') {
+        if (exKey === 'legs_4') return ['leg_ext'];
+        if (exKey === 'legs_5') return ['leg_curl'];
+        return [];
+      }
+      switch (ex.equipment) {
+        case 'Машина Смита':
+          return ['smith'];
+        case 'Кроссовер / Pec Deck':
+          return ['crossover', 'pecdeck'];
+        case 'Тренажёр Хаммер':
+          return ['hammer_shoulder', 'hammer'];
+        case 'Нижний блок':
+          return ['cable_low'];
+        case 'Верхний блок':
+          return ['cable_high'];
+        case 'Блок + канат':
+          return ['cable_high'];
+        case 'Машина Смита / Хаммер':
+          return ['hammer_row', 'smith', 'hammer'];
+        case 'Горизонтальный блок':
+          return ['cable_row'];
+        case 'Скамья Скотта':
+          return ['scott'];
+        case 'Платформа':
+          return ['leg_press'];
+        case 'Тренажёр / Смит':
+          return ['calf_machine', 'smith'];
+        case 'Блок':
+          return ['cable_high', 'cable_low'];
+        default:
+          return [];
+      }
+    }
 
     function probeSingleImage(url) {
       return new Promise((resolve) => {
@@ -779,12 +788,12 @@
       });
     }
 
-    async function resolveBaseMedia(baseName) {
+    async function resolveMachineMedia(machineKey) {
       for (const ext of MEDIA_EXTENSIONS) {
-        const candidate = `${baseName}${ext}`;
-        const foundUrl = await probeSingleImage(candidate);
+        const candidateUrl = `${machineKey}${ext}`;
+        const foundUrl = await probeSingleImage(candidateUrl);
         if (foundUrl) {
-          resolvedMediaMap[baseName] = foundUrl;
+          resolvedMediaMap[machineKey] = foundUrl;
           renderExercises();
           return;
         }
@@ -792,38 +801,27 @@
     }
 
     function probeAllEquipmentMedia() {
-      const uniqueFiles = new Set();
-      Object.values(PROGRAM_DATA).forEach(day => {
-        day.exercises.forEach(ex => {
-          if (Array.isArray(ex.media)) {
-            ex.media.forEach(item => {
-              if (item && item.file) uniqueFiles.add(item.file);
-            });
-          }
-        });
-      });
-
-      uniqueFiles.forEach(baseName => {
-        resolveBaseMedia(baseName);
+      Object.keys(MACHINE_CATALOG).forEach((machineKey) => {
+        resolveMachineMedia(machineKey);
       });
     }
 
-    function getResolvedExerciseMedia(ex) {
-      if (!Array.isArray(ex.media)) return [];
+    function getResolvedSlidesForExercise(dayId, ex) {
+      const keys = getCandidateMachineKeys(dayId, ex);
       const slides = [];
-      ex.media.forEach(item => {
-        const url = resolvedMediaMap[item.file];
+      keys.forEach((machineKey) => {
+        const url = resolvedMediaMap[machineKey];
         if (url) {
           slides.push({
             url,
-            caption: item.caption || ex.equipment
+            caption: MACHINE_CATALOG[machineKey] || ex.equipment
           });
         }
       });
       return slides;
     }
 
-    // Состояние модального лайтбокса и галереи
+    // Состояние полноэкранного лайтбокса
     let lightboxState = {
       isOpen: false,
       slides: [],
@@ -859,7 +857,7 @@
         dotsEl.innerHTML = slides.map((_, idx) => {
           const isActive = idx === currentIndex;
           return `<span class="h-1.5 rounded-full transition-all duration-150 ${
-            isActive ? 'w-4 bg-muted-steel' : 'w-1.5 bg-base-border'
+            isActive ? 'w-4 bg-muted-steel' : 'w-1.5 bg-white/30'
           }"></span>`;
         }).join('');
 
@@ -1194,7 +1192,7 @@
       const day = PROGRAM_DATA[state.activeDay];
       const weekIdx = state.weeksByDay[state.activeDay] ?? 0;
 
-      // Запоминаем активное поле ввода веса, если пользователь в этот момент печатает
+      // Сохраняем фокус поля веса, если в этот момент идёт ввод
       const activeEl = document.activeElement;
       const focusedWeightKey = activeEl && activeEl.classList && activeEl.classList.contains('weight-input')
         ? activeEl.getAttribute('data-weight-key')
@@ -1215,22 +1213,16 @@
         const savedWeight = state.weights[key] ?? '';
         const prevWeight = state.prevWeights[key] ?? '';
         const currentReps = ex.weeks[weekIdx] || ex.weeks[0];
-        const availableSlides = getResolvedExerciseMedia(ex);
+        const availableSlides = getResolvedSlidesForExercise(day.id, ex);
         const hasMedia = availableSlides.length > 0;
 
+        // Без иконки: только аккуратная тонкая обводка, если для тренажёра загружено фото
         const equipmentBadgeHtml = hasMedia
           ? `<button
                type="button"
                data-open-media="${ex.num}"
-               title="Посмотреть фото тренажёра"
-               class="equipment-media-btn inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg hover:bg-base-elevated active:scale-95 text-ink-primary border border-muted-steelBorder/60 transition"
-             >
-               <svg class="w-3 h-3 text-muted-steel shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-               </svg>
-               <span>${ex.equipment}</span>
-             </button>`
+               class="equipment-media-btn inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-[rgba(107,140,174,0.28)] active:scale-95 transition cursor-pointer"
+             >${ex.equipment}</button>`
           : `<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-base-borderSoft">
                ${ex.equipment}
              </span>`;
@@ -1381,14 +1373,14 @@
         `;
       }).join('');
 
-      // Обработчики открытия фото тренажёра
+      // Открытие чистого полноэкранного просмотра тренажёра
       listEl.querySelectorAll('.equipment-media-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const exNum = Number(btn.getAttribute('data-open-media'));
           const exercise = day.exercises.find(item => item.num === exNum);
           if (exercise) {
-            const slides = getResolvedExerciseMedia(exercise);
+            const slides = getResolvedSlidesForExercise(day.id, exercise);
             if (slides.length > 0) {
               openEquipmentLightbox(slides);
             }
@@ -1469,7 +1461,6 @@
         });
       });
 
-      // Восстанавливаем фокус при асинхронной дозагрузке картинок
       if (focusedWeightKey) {
         const restoredInput = document.getElementById(`weight_${focusedWeightKey}`);
         if (restoredInput) {
@@ -1674,36 +1665,50 @@
       renderAll();
       probeAllEquipmentMedia();
 
-      // Управление лайтбоксом тренажёров
+      // Управление полноэкранным просмотрщиком фото
       const lightboxOverlay = document.getElementById('equipmentLightbox');
-      const lightboxCard = document.getElementById('lightboxCard');
-      const lightboxStage = document.getElementById('lightboxImageStage');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const lightboxPrevBtn = document.getElementById('lightboxPrevBtn');
+      const lightboxNextBtn = document.getElementById('lightboxNextBtn');
+      const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
 
+      // Тап по тёмному фону мимо самой картинки закрывает окно
       lightboxOverlay.addEventListener('click', (e) => {
         if (e.target === lightboxOverlay) {
           closeEquipmentLightbox();
         }
       });
 
-      lightboxCard.addEventListener('click', (e) => {
+      lightboxImg.addEventListener('click', (e) => {
         e.stopPropagation();
       });
 
-      document.getElementById('lightboxCloseBtn').addEventListener('click', closeEquipmentLightbox);
-      document.getElementById('lightboxPrevBtn').addEventListener('click', () => stepLightboxSlide(-1));
-      document.getElementById('lightboxNextBtn').addEventListener('click', () => stepLightboxSlide(1));
+      lightboxCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeEquipmentLightbox();
+      });
 
-      // Горизонтальный свайп пальцем в галерее
+      lightboxPrevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        stepLightboxSlide(-1);
+      });
+
+      lightboxNextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        stepLightboxSlide(1);
+      });
+
+      // Горизонтальный свайп пальцем по экрану для переключения слайдов
       let touchStartX = 0;
       let touchStartY = 0;
 
-      lightboxStage.addEventListener('touchstart', (e) => {
+      lightboxOverlay.addEventListener('touchstart', (e) => {
         if (!e.touches || !e.touches.length) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
       }, { passive: true });
 
-      lightboxStage.addEventListener('touchend', (e) => {
+      lightboxOverlay.addEventListener('touchend', (e) => {
         if (!e.changedTouches || !e.changedTouches.length) return;
         const deltaX = e.changedTouches[0].clientX - touchStartX;
         const deltaY = e.changedTouches[0].clientY - touchStartY;
@@ -1713,7 +1718,6 @@
         }
       }, { passive: true });
 
-      // Закрытие по Esc и переключение стрелками на ПК
       document.addEventListener('keydown', (e) => {
         if (!lightboxState.isOpen) return;
         if (e.key === 'Escape') closeEquipmentLightbox();
