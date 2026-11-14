@@ -248,7 +248,7 @@
           </button>
         </div>
 
-        <!-- Встроенное поле вставки строки бэкапа (без системных диалогов) -->
+        <!-- Встроенное поле вставки строки бэкапа -->
         <div id="importPanel" class="accordion-content">
           <div class="accordion-inner">
             <div class="p-3 rounded-2xl bg-base-card border border-base-border space-y-2 mt-1">
@@ -276,7 +276,7 @@
     </main>
   </div>
 
-  <!-- Нижний беззвучный таймер отдыха -->
+  <!-- Нижний таймер отдыха -->
   <div id="restTimerBar" class="fixed bottom-0 left-0 right-0 z-30 bg-base-card/95 backdrop-blur-md border-t border-base-border px-3.5 py-2.5">
     <div class="max-w-[540px] mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0">
@@ -291,6 +291,7 @@
         <button type="button" data-timer-sec="90" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">90с</button>
         <button type="button" data-timer-sec="120" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">2м</button>
         <button type="button" data-timer-sec="180" class="timer-preset-btn px-2.5 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated active:scale-95 border border-base-border text-xs font-mono font-semibold text-ink-primary transition">3м</button>
+        <button id="timerAdd15Btn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-bg hover:bg-base-elevated border border-base-border text-xs font-mono font-semibold text-ink-secondary active:scale-95 transition">+15с</button>
         <button id="timerToggleBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-muted-steelBg border border-muted-steelBorder text-xs font-semibold text-ink-primary active:scale-95 transition">Пауза</button>
         <button id="timerResetBtn" type="button" class="hidden px-2 py-1.5 rounded-xl bg-base-elevated border border-base-border text-xs font-semibold text-ink-secondary active:scale-95 transition">✕</button>
       </div>
@@ -1177,7 +1178,6 @@
           const idx = Number(btn.getAttribute('data-week'));
           const prevIdx = state.weeksByDay[state.activeDay] ?? 0;
           if (!Number.isNaN(idx) && prevIdx !== idx) {
-            // При возврате с Нед. 5 (или Нед. 4) на Нед. 1 сохраняем прошлые веса как ориентир
             if (idx === 0 && prevIdx >= 3) {
               const day = PROGRAM_DATA[state.activeDay];
               day.exercises.forEach(ex => {
@@ -1296,7 +1296,7 @@
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2">
                   <h3 class="text-sm sm:text-[15px] font-semibold leading-snug ${
-                    isDone ? 'line-through text-ink-secondary' : 'text-ink-primary'
+                    isDone ? 'text-ink-secondary' : 'text-ink-primary'
                   }">
                     ${ex.name}
                   </h3>
@@ -1583,11 +1583,39 @@
       renderMatrix();
     }
 
-    // Беззвучный таймер отдыха с точным расчётом по метке времени (не сбивается при блокировке экрана iPhone)
+    // Таймер отдыха с точным расчётом по метке времени и мягким звуковым/вибро сигналом
     let restInterval = null;
     let timerEndTimestamp = 0;
     let pausedRemainingSec = 0;
     let isTimerRunning = false;
+
+    function playFinishSignal() {
+      try {
+        if (navigator.vibrate) {
+          navigator.vibrate([120, 80, 120]);
+        }
+      } catch (_) {}
+
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+        [660, 880].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.14);
+          gain.gain.setValueAtTime(0.001, now + i * 0.14);
+          gain.gain.exponentialRampToValueAtTime(0.12, now + i * 0.14 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.14 + 0.13);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.14);
+          osc.stop(now + i * 0.14 + 0.14);
+        });
+      } catch (_) {}
+    }
 
     function formatSeconds(sec) {
       const m = Math.floor(sec / 60);
@@ -1603,6 +1631,7 @@
       const display = document.getElementById('timerDisplay');
       const label = document.getElementById('timerLabel');
       const toggleBtn = document.getElementById('timerToggleBtn');
+      const add15Btn = document.getElementById('timerAdd15Btn');
 
       if (remSec > 0) {
         display.textContent = formatSeconds(remSec);
@@ -1615,6 +1644,8 @@
         display.className = 'font-mono text-xs font-bold text-muted-sage px-2.5 py-1.5 rounded-xl bg-muted-sageBg border border-muted-sageBorder min-w-[68px] text-center transition-colors';
         label.textContent = 'Отдых завершён';
         toggleBtn.classList.add('hidden');
+        if (add15Btn) add15Btn.classList.add('hidden');
+        playFinishSignal();
         showToast('Отдых завершён — можно делать подход');
       }
     }
@@ -1632,6 +1663,7 @@
       const label = document.getElementById('timerLabel');
       const toggleBtn = document.getElementById('timerToggleBtn');
       const resetBtn = document.getElementById('timerResetBtn');
+      const add15Btn = document.getElementById('timerAdd15Btn');
 
       if (resetDisplay && display) {
         display.textContent = '00:00';
@@ -1640,6 +1672,7 @@
       if (label) label.textContent = 'Отдых';
       if (toggleBtn) toggleBtn.classList.add('hidden');
       if (resetBtn) resetBtn.classList.add('hidden');
+      if (add15Btn) add15Btn.classList.add('hidden');
     }
 
     function startRestTimer(seconds) {
@@ -1655,6 +1688,7 @@
       const label = document.getElementById('timerLabel');
       const toggleBtn = document.getElementById('timerToggleBtn');
       const resetBtn = document.getElementById('timerResetBtn');
+      const add15Btn = document.getElementById('timerAdd15Btn');
 
       display.textContent = formatSeconds(seconds);
       display.className = 'font-mono text-base font-bold text-muted-steel px-2.5 py-1 rounded-xl bg-muted-steelBg border border-muted-steelBorder min-w-[68px] text-center transition-colors';
@@ -1662,8 +1696,20 @@
       toggleBtn.textContent = 'Пауза';
       toggleBtn.classList.remove('hidden');
       resetBtn.classList.remove('hidden');
+      if (add15Btn) add15Btn.classList.remove('hidden');
 
       restInterval = setInterval(syncTimerTick, 250);
+    }
+
+    function add15SecondsToTimer() {
+      if (isTimerRunning) {
+        timerEndTimestamp += 15000;
+        syncTimerTick();
+      } else if (pausedRemainingSec > 0) {
+        pausedRemainingSec += 15;
+        const display = document.getElementById('timerDisplay');
+        if (display) display.textContent = formatSeconds(pausedRemainingSec);
+      }
     }
 
     function togglePauseTimer() {
@@ -1877,6 +1923,7 @@
         });
       });
 
+      document.getElementById('timerAdd15Btn').addEventListener('click', add15SecondsToTimer);
       document.getElementById('timerToggleBtn').addEventListener('click', togglePauseTimer);
       document.getElementById('timerResetBtn').addEventListener('click', () => stopRestTimer(true));
     });
