@@ -57,10 +57,9 @@
       -webkit-touch-callout: none;
     }
 
-    /* Разрешаем выделение и вставку текста только в полях ввода */
+    /* Разрешаем выделение и вставку текста только в полях ввода веса и импорта */
     input.weight-input,
-    input.backup-input,
-    input.video-url-input {
+    input.backup-input {
       -webkit-user-select: text;
       -moz-user-select: text;
       -ms-user-select: text;
@@ -365,6 +364,49 @@
     </div>
   </div>
 
+  <!-- Полноэкранный чистый просмотрщик видео (без лишних кнопок и панелей) -->
+  <div
+    id="videoLightbox"
+    class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="videoLightboxCaption"
+  >
+    <button
+      id="videoLightboxCloseBtn"
+      type="button"
+      aria-label="Закрыть видео"
+      class="fixed top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-ink-primary/80 hover:text-ink-primary flex items-center justify-center transition"
+    >
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <video
+      id="videoLightboxPlayer"
+      src=""
+      controls
+      playsinline
+      autoplay
+      loop
+      class="hidden max-h-[78vh] max-w-[92vw] rounded-xl shadow-2xl bg-black select-none"
+    ></video>
+
+    <iframe
+      id="videoLightboxIframe"
+      src=""
+      title="Видео упражнения"
+      class="hidden max-w-[92vw] w-[500px] aspect-video rounded-xl shadow-2xl border-0 bg-black"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+    ></iframe>
+
+    <div class="fixed bottom-7 left-0 right-0 px-6 text-center pointer-events-none z-20">
+      <div id="videoLightboxCaption" class="text-base sm:text-lg font-semibold text-ink-primary"></div>
+    </div>
+  </div>
+
   <!-- Всплывающее уведомление -->
   <div
     id="toast"
@@ -389,7 +431,7 @@
             sets: 4,
             rest: '2.5–3.5 мин',
             muscles: 'Грудь (середина)',
-            videoUrl: 'https://musclewiki.com/api-next/videos/male-Machine-machine-face-pulls-front.mp4',
+            videoUrl: 'https://d2l9nsnmtah87f.cloudfront.net/exercise-assets/07481201-Smith-Bench-Press_Chest.mp4',
             steps: [
               { label: 'Старт:', text: 'Скамья строго по центру, гриф над серединой груди (линией сосков). Лопатки сведи и прижми к скамье, плечи опусти вниз, стопы плотно в пол. Хват чуть шире плеч, закрытый хват, кисти не заламывай назад.' },
               { label: 'Опускание:', text: 'Плавно за 2 секунды опусти гриф к нижней части груди на вдохе, локти держи под углом ~45° к телу.' },
@@ -793,15 +835,14 @@
       if (!url) return null;
 
       if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)) {
-        return { type: 'video', embedUrl: url, originalUrl: url };
+        return { type: 'video', embedUrl: url };
       }
 
       const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
       if (ytMatch && ytMatch[1]) {
         return {
           type: 'iframe',
-          embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&playsinline=1`,
-          originalUrl: url
+          embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0&playsinline=1`
         };
       }
 
@@ -809,8 +850,7 @@
       if (vimeoMatch && vimeoMatch[1]) {
         return {
           type: 'iframe',
-          embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
-          originalUrl: url
+          embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`
         };
       }
 
@@ -818,8 +858,7 @@
       if (rutubeMatch && rutubeMatch[1]) {
         return {
           type: 'iframe',
-          embedUrl: `https://rutube.ru/play/embed/${rutubeMatch[1]}`,
-          originalUrl: url
+          embedUrl: `https://rutube.ru/play/embed/${rutubeMatch[1]}`
         };
       }
 
@@ -827,19 +866,22 @@
       if (vkMatch && vkMatch[1] && vkMatch[2]) {
         return {
           type: 'iframe',
-          embedUrl: `https://vk.com/video_ext.php?oid=${vkMatch[1]}&id=${vkMatch[2]}&hd=2`,
-          originalUrl: url
+          embedUrl: `https://vk.com/video_ext.php?oid=${vkMatch[1]}&id=${vkMatch[2]}&hd=2&autoplay=1`
         };
       }
 
       const safeUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
-      return { type: 'iframe', embedUrl: safeUrl, originalUrl: safeUrl };
+      return { type: 'iframe', embedUrl: safeUrl };
     }
 
     // Автопоиск базовых и нумерованных фото тренажёров (.webp, .jpg, .png, .jpeg, включая _1 .. _5)
     const MEDIA_EXTENSIONS = ['.webp', '.jpg', '.png', '.jpeg'];
     const MEDIA_SUFFIXES = ['', '_1', '_2', '_3', '_4', '_5'];
     const resolvedMediaMap = {};
+
+    // Автопоиск видеофайлов из корня репозитория (push_1.mp4, pull_1.mp4, legs_1.mp4 и т.д.)
+    const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov'];
+    const resolvedVideoMap = {};
 
     function getExerciseMediaSpecs(dayId, ex) {
       if (dayId === 'legs' && ex.num === 4) {
@@ -900,6 +942,26 @@
       });
     }
 
+    function probeSingleVideo(url) {
+      return new Promise((resolve) => {
+        const vid = document.createElement('video');
+        vid.preload = 'metadata';
+        let settled = false;
+        const finish = (result) => {
+          if (settled) return;
+          settled = true;
+          vid.onloadedmetadata = null;
+          vid.onerror = null;
+          vid.removeAttribute('src');
+          vid.load();
+          resolve(result);
+        };
+        vid.onloadedmetadata = () => finish(url);
+        vid.onerror = () => finish(null);
+        vid.src = url;
+      });
+    }
+
     async function resolveBaseMedia(baseName) {
       const foundUrls = [];
       for (const suffix of MEDIA_SUFFIXES) {
@@ -918,6 +980,18 @@
       }
     }
 
+    async function resolveExerciseVideo(key) {
+      for (const ext of VIDEO_EXTENSIONS) {
+        const candidate = `${key}${ext}`;
+        const foundUrl = await probeSingleVideo(candidate);
+        if (foundUrl) {
+          resolvedVideoMap[key] = foundUrl;
+          renderExercises();
+          return;
+        }
+      }
+    }
+
     function probeAllEquipmentMedia() {
       const uniqueKeys = new Set();
       Object.entries(PROGRAM_DATA).forEach(([dayId, day]) => {
@@ -925,6 +999,7 @@
           getExerciseMediaSpecs(dayId, ex).forEach(spec => {
             if (spec.key) uniqueKeys.add(spec.key);
           });
+          resolveExerciseVideo(`${dayId}_${ex.num}`);
         });
       });
 
@@ -950,6 +1025,13 @@
         }
       });
       return slides;
+    }
+
+    function getResolvedExerciseVideo(dayId, ex) {
+      const key = `${dayId}_${ex.num}`;
+      const rawUrl = (resolvedVideoMap[key] || ex.videoUrl || '').trim();
+      if (!rawUrl) return null;
+      return parseVideoSource(rawUrl);
     }
 
     // Состояние полноэкранного просмотрщика фото
@@ -1032,16 +1114,68 @@
       updateLightboxView();
     }
 
+    // Полноэкранный чистый просмотрщик видео
+    let isVideoLightboxOpen = false;
+
+    function openVideoLightbox(videoSource, caption) {
+      if (!videoSource || !videoSource.embedUrl) return;
+      isVideoLightboxOpen = true;
+
+      const overlay = document.getElementById('videoLightbox');
+      const playerEl = document.getElementById('videoLightboxPlayer');
+      const iframeEl = document.getElementById('videoLightboxIframe');
+      const captionEl = document.getElementById('videoLightboxCaption');
+
+      captionEl.textContent = caption || '';
+
+      if (videoSource.type === 'video') {
+        iframeEl.src = '';
+        iframeEl.classList.add('hidden');
+
+        playerEl.src = videoSource.embedUrl;
+        playerEl.classList.remove('hidden');
+        playerEl.play().catch(() => {});
+      } else {
+        playerEl.pause();
+        playerEl.removeAttribute('src');
+        playerEl.load();
+        playerEl.classList.add('hidden');
+
+        iframeEl.src = videoSource.embedUrl;
+        iframeEl.classList.remove('hidden');
+      }
+
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+    }
+
+    function closeVideoLightbox() {
+      if (!isVideoLightboxOpen) return;
+      isVideoLightboxOpen = false;
+
+      const overlay = document.getElementById('videoLightbox');
+      const playerEl = document.getElementById('videoLightboxPlayer');
+      const iframeEl = document.getElementById('videoLightboxIframe');
+
+      playerEl.pause();
+      playerEl.removeAttribute('src');
+      playerEl.load();
+      playerEl.classList.add('hidden');
+
+      iframeEl.src = '';
+      iframeEl.classList.add('hidden');
+
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+
     let state = {
       activeDay: 'push',
       weeksByDay: { push: 0, pull: 0, legs: 0 },
       weights: {},
       prevWeights: {},
       completed: {},
-      videoUrls: {},
       openDetails: {},
-      openVideos: {},
-      editingVideos: {},
       updatedAt: 0
     };
 
@@ -1097,8 +1231,6 @@
       if (parsed.weights && typeof parsed.weights === 'object') state.weights = parsed.weights;
       if (parsed.prevWeights && typeof parsed.prevWeights === 'object') state.prevWeights = parsed.prevWeights;
       if (parsed.completed && typeof parsed.completed === 'object') state.completed = parsed.completed;
-      if (parsed.videoUrls && typeof parsed.videoUrls === 'object') state.videoUrls = parsed.videoUrls;
-      else if (parsed.videos && typeof parsed.videos === 'object') state.videoUrls = parsed.videos;
       if (parsed.updatedAt) state.updatedAt = parsed.updatedAt;
     }
 
@@ -1141,7 +1273,6 @@
         weights: state.weights,
         prevWeights: state.prevWeights,
         completed: state.completed,
-        videoUrls: state.videoUrls,
         updatedAt: state.updatedAt
       };
       try {
@@ -1350,13 +1481,8 @@
         const currentReps = ex.weeks[weekIdx] || ex.weeks[0];
         const availableSlides = getResolvedExerciseMedia(day.id, ex);
         const hasMedia = availableSlides.length > 0;
+        const resolvedVideo = getResolvedExerciseVideo(day.id, ex);
         const restSeconds = parseRestToSeconds(ex.rest);
-
-        const activeVideoUrl = (state.videoUrls[key] || ex.videoUrl || '').trim();
-        const hasVideo = activeVideoUrl.length > 0;
-        const isVideoOpen = !!state.openVideos[key];
-        const isEditingVideo = !!state.editingVideos[key];
-        const parsedVideo = hasVideo ? parseVideoSource(activeVideoUrl) : null;
 
         const equipmentBadgeHtml = hasMedia
           ? `<button
@@ -1388,97 +1514,20 @@
           `;
         }).join('');
 
-        let videoSectionContent = '';
-        if (isEditingVideo) {
-          videoSectionContent = `
-            <div class="mt-2.5 p-2.5 rounded-xl bg-base-card border border-base-border space-y-2">
-              <div class="flex items-center gap-1.5">
-                <input
-                  id="video_input_${key}"
-                  type="url"
-                  inputmode="url"
-                  autocomplete="off"
-                  placeholder="Вставь ссылку (YouTube, Shorts, VK, MP4)..."
-                  value="${escapeHtml(activeVideoUrl)}"
-                  data-video-input="${key}"
-                  class="video-url-input flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-base-bg border border-base-border text-xs text-ink-primary placeholder-ink-dim focus:outline-none focus:border-muted-steelBorder"
-                />
-                <button
-                  type="button"
-                  data-save-video="${key}"
-                  class="px-3 py-1.5 rounded-lg bg-muted-steelBg border border-muted-steelBorder text-xs font-semibold text-ink-primary active:scale-95 transition shrink-0"
-                >
-                  Сохранить
-                </button>
-                <button
-                  type="button"
-                  data-cancel-video-edit="${key}"
-                  title="Отмена"
-                  class="px-2 py-1.5 rounded-lg bg-base-bg border border-base-border text-xs text-ink-secondary hover:text-ink-primary active:scale-95 transition shrink-0"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          `;
-        } else if (isVideoOpen && parsedVideo) {
-          const mediaPlayerHtml = parsedVideo.type === 'video'
-            ? `<video src="${escapeHtml(parsedVideo.embedUrl)}" controls playsinline preload="metadata" class="w-full h-full object-contain bg-black"></video>`
-            : `<iframe
-                 src="${escapeHtml(parsedVideo.embedUrl)}"
-                 title="${escapeHtml(ex.name)}"
-                 class="w-full h-full border-0"
-                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                 allowfullscreen
-                 loading="lazy"
-               ></iframe>`;
-
-          videoSectionContent = `
-            <div class="mt-2.5 space-y-1.5">
-              <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-base-border">
-                ${mediaPlayerHtml}
-              </div>
-              <div class="flex items-center justify-between gap-2 px-0.5 text-[11px]">
-                <a
-                  href="${escapeHtml(parsedVideo.originalUrl)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-muted-steel hover:underline inline-flex items-center gap-1"
-                >
-                  <span>Открыть в новой вкладке</span>
-                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-                <div class="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    data-edit-video="${key}"
-                    class="px-2 py-0.5 rounded-md bg-base-card border border-base-border text-ink-secondary hover:text-ink-primary transition"
-                  >
-                    Изменить
-                  </button>
-                  <button
-                    type="button"
-                    data-clear-video="${key}"
-                    title="Удалить ссылку"
-                    class="px-1.5 py-0.5 rounded-md bg-base-card border border-base-border text-ink-secondary hover:text-muted-ochre transition"
-                  >
-                    Удалить
-                  </button>
-                  <button
-                    type="button"
-                    data-close-video="${key}"
-                    title="Свернуть видео"
-                    class="px-1.5 py-0.5 rounded-md bg-base-card border border-base-border text-ink-secondary hover:text-ink-primary transition"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
-        }
+        const videoButtonHtml = resolvedVideo
+          ? `<div class="pt-2 flex justify-center">
+               <button
+                 type="button"
+                 data-open-video="${ex.num}"
+                 class="open-video-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-base-card hover:bg-base-elevated active:scale-95 border border-muted-steelBorder text-[11px] font-medium text-muted-steel transition"
+               >
+                 <svg class="w-3 h-3 text-muted-steel" viewBox="0 0 24 24" fill="currentColor">
+                   <path d="M8 5v14l11-7z" />
+                 </svg>
+                 <span>Видео</span>
+               </button>
+             </div>`
+          : '';
 
         return `
           <article
@@ -1616,25 +1665,7 @@
                   <div class="space-y-1.5 pt-1 border-t border-base-borderSoft/70">
                     ${stepsHtml}
                   </div>
-                  <div class="pt-2">
-                    <div class="flex justify-center">
-                      <button
-                        type="button"
-                        data-toggle-video="${key}"
-                        class="video-toggle-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-base-card hover:bg-base-elevated active:scale-95 border text-[11px] font-medium transition ${
-                          hasVideo
-                            ? 'border-muted-steelBorder text-muted-steel'
-                            : 'border-base-border text-ink-secondary hover:text-ink-primary'
-                        }"
-                      >
-                        <svg class="w-3 h-3 ${hasVideo ? 'text-muted-steel' : 'text-ink-dim'}" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                        <span>Видео</span>
-                      </button>
-                    </div>
-                    ${videoSectionContent}
-                  </div>
+                  ${videoButtonHtml}
                 </div>
               </div>
             </div>
@@ -1651,6 +1682,20 @@
             const slides = getResolvedExerciseMedia(day.id, exercise);
             if (slides.length > 0) {
               openEquipmentLightbox(slides);
+            }
+          }
+        });
+      });
+
+      listEl.querySelectorAll('.open-video-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const exNum = Number(btn.getAttribute('data-open-video'));
+          const exercise = day.exercises.find(item => item.num === exNum);
+          if (exercise) {
+            const videoSource = getResolvedExerciseVideo(day.id, exercise);
+            if (videoSource) {
+              openVideoLightbox(videoSource, exercise.name);
             }
           }
         });
@@ -1708,99 +1753,6 @@
           btn.classList.toggle('bg-muted-steelBg', state.openDetails[key]);
           if (chevron) chevron.classList.toggle('rotate-180', state.openDetails[key]);
           btn.setAttribute('aria-expanded', String(!!state.openDetails[key]));
-        });
-      });
-
-      listEl.querySelectorAll('.video-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-toggle-video');
-          const ex = day.exercises.find(item => `${day.id}_${item.num}` === key);
-          const currentUrl = (state.videoUrls[key] || (ex && ex.videoUrl) || '').trim();
-
-          if (!currentUrl) {
-            state.editingVideos[key] = !state.editingVideos[key];
-            state.openVideos[key] = false;
-            renderExercises();
-            if (state.editingVideos[key]) {
-              setTimeout(() => {
-                const inp = document.getElementById(`video_input_${key}`);
-                if (inp) inp.focus();
-              }, 50);
-            }
-          } else {
-            state.editingVideos[key] = false;
-            state.openVideos[key] = !state.openVideos[key];
-            renderExercises();
-          }
-        });
-      });
-
-      listEl.querySelectorAll('[data-save-video]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-save-video');
-          const inp = document.getElementById(`video_input_${key}`);
-          const val = inp ? inp.value.trim() : '';
-          if (!val) {
-            showToast('Вставь ссылку на видео');
-            return;
-          }
-          state.videoUrls[key] = val;
-          state.editingVideos[key] = false;
-          state.openVideos[key] = true;
-          saveState();
-          renderExercises();
-          showToast('Ссылка на видео сохранена');
-        });
-      });
-
-      listEl.querySelectorAll('.video-url-input').forEach(inp => {
-        inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            const key = inp.getAttribute('data-video-input');
-            const saveBtn = listEl.querySelector(`[data-save-video="${key}"]`);
-            if (saveBtn) saveBtn.click();
-          }
-        });
-      });
-
-      listEl.querySelectorAll('[data-cancel-video-edit]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-cancel-video-edit');
-          state.editingVideos[key] = false;
-          renderExercises();
-        });
-      });
-
-      listEl.querySelectorAll('[data-edit-video]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-edit-video');
-          state.editingVideos[key] = true;
-          renderExercises();
-          setTimeout(() => {
-            const inp = document.getElementById(`video_input_${key}`);
-            if (inp) inp.focus();
-          }, 50);
-        });
-      });
-
-      listEl.querySelectorAll('[data-clear-video]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-clear-video');
-          delete state.videoUrls[key];
-          state.openVideos[key] = false;
-          state.editingVideos[key] = false;
-          saveState();
-          renderExercises();
-          showToast('Видео удалено');
-        });
-      });
-
-      listEl.querySelectorAll('[data-close-video]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-close-video');
-          state.openVideos[key] = false;
-          renderExercises();
         });
       });
 
@@ -2102,6 +2054,7 @@
       renderAll();
       probeAllEquipmentMedia();
 
+      // Лайтбокс фото тренажёров
       const lightboxOverlay = document.getElementById('equipmentLightbox');
       const lightboxImg = document.getElementById('lightboxImg');
 
@@ -2149,11 +2102,39 @@
         }
       }, { passive: true });
 
+      // Лайтбокс видео
+      const videoLightboxOverlay = document.getElementById('videoLightbox');
+      const videoLightboxPlayer = document.getElementById('videoLightboxPlayer');
+      const videoLightboxIframe = document.getElementById('videoLightboxIframe');
+
+      videoLightboxOverlay.addEventListener('click', (e) => {
+        if (e.target === videoLightboxOverlay) {
+          closeVideoLightbox();
+        }
+      });
+
+      videoLightboxPlayer.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      videoLightboxIframe.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      document.getElementById('videoLightboxCloseBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeVideoLightbox();
+      });
+
       document.addEventListener('keydown', (e) => {
-        if (!lightboxState.isOpen) return;
-        if (e.key === 'Escape') closeEquipmentLightbox();
-        if (e.key === 'ArrowLeft') stepLightboxSlide(-1);
-        if (e.key === 'ArrowRight') stepLightboxSlide(1);
+        if (lightboxState.isOpen) {
+          if (e.key === 'Escape') closeEquipmentLightbox();
+          if (e.key === 'ArrowLeft') stepLightboxSlide(-1);
+          if (e.key === 'ArrowRight') stepLightboxSlide(1);
+        }
+        if (isVideoLightboxOpen && e.key === 'Escape') {
+          closeVideoLightbox();
+        }
       });
 
       const toggleGuideBtn = document.getElementById('toggleGuideBtn');
@@ -2220,8 +2201,7 @@
           weeksByDay: state.weeksByDay,
           weights: state.weights,
           prevWeights: state.prevWeights,
-          completed: state.completed,
-          videoUrls: state.videoUrls
+          completed: state.completed
         });
         copyTextFallback(exportPayload);
       });
