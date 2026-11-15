@@ -4,13 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Push/Pull/Legs</title>
+  <!-- Иконка приложения из папки ico/ -->
   <link rel="icon" type="image/png" href="./ico/app.png">
   <link rel="apple-touch-icon" href="./ico/app.png">
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Шрифты Inter и JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <script>
+    // Конфигурация палитры и шрифтов Tailwind
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -76,6 +80,7 @@
       scroll-behavior: smooth;
     }
 
+    /* Плавное раскрытие аккордеонов */
     .accordion-content {
       display: grid;
       grid-template-rows: 0fr;
@@ -375,7 +380,7 @@
     </div>
   </div>
 
-  <!-- Полноэкранный чистый просмотрщик видео (без лишних кнопок и панелей) -->
+  <!-- Полноэкранный чистый просмотрщик видео и GIF -->
   <div
     id="videoLightbox"
     class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center"
@@ -404,6 +409,13 @@
       class="hidden max-h-[78vh] max-w-[92vw] rounded-xl shadow-2xl bg-black select-none"
     ></video>
 
+    <img
+      id="videoLightboxGif"
+      src=""
+      alt=""
+      class="hidden max-h-[78vh] max-w-[92vw] object-contain rounded-xl shadow-2xl select-none"
+    />
+
     <iframe
       id="videoLightboxIframe"
       src=""
@@ -427,6 +439,7 @@
   </div>
 
   <script>
+    // Данные тренировочной программы (Push / Pull / Legs)
     const PROGRAM_DATA = {
       push: {
         id: 'push',
@@ -822,6 +835,7 @@
     const IDB_NAME = 'PPLTrackerDB';
     const IDB_STORE = 'state_store';
 
+    // Склонение количества подходов
     function formatSetsRu(n) {
       const abs = Math.abs(n) % 100;
       const mod10 = abs % 10;
@@ -831,6 +845,7 @@
       return `${n} подходов`;
     }
 
+    // Парсинг строки времени отдыха в секунды
     function parseRestToSeconds(restStr) {
       const clean = String(restStr || '').replace(/,/g, '.');
       const nums = (clean.match(/\d+(?:\.\d+)?/g) || []).map(Number);
@@ -841,9 +856,14 @@
       return Math.round(isMinutes ? avg * 60 : avg);
     }
 
+    // Определение типа видеоисточника (GIF, MP4/WebM/MOV или iframe)
     function parseVideoSource(rawUrl) {
       const url = String(rawUrl || '').trim();
       if (!url) return null;
+
+      if (/\.gif(\?.*)?$/i.test(url)) {
+        return { type: 'gif', embedUrl: url };
+      }
 
       if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)) {
         return { type: 'video', embedUrl: url };
@@ -885,13 +905,13 @@
       return { type: 'iframe', embedUrl: safeUrl };
     }
 
-    // Автопоиск базовых и нумерованных фото тренажёров (.webp, .jpg, .png, .jpeg, включая _1 .. _5)
+    // Автопоиск базовых и нумерованных фото тренажёров из папки photo/
     const MEDIA_EXTENSIONS = ['.webp', '.jpg', '.png', '.jpeg'];
     const MEDIA_SUFFIXES = ['', '_1', '_2', '_3', '_4', '_5'];
     const resolvedMediaMap = {};
 
-    // Автопоиск видеофайлов из корня репозитория (push_1.mp4, pull_1.mp4, legs_1.mp4 и т.д.)
-    const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov'];
+    // Автопоиск видеофайлов и гифок из папки video/
+    const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.gif'];
     const resolvedVideoMap = {};
 
     function getExerciseMediaSpecs(dayId, ex) {
@@ -994,7 +1014,9 @@
     async function resolveExerciseVideo(key) {
       for (const ext of VIDEO_EXTENSIONS) {
         const candidate = `video/${key}${ext}`;
-        const foundUrl = await probeSingleVideo(candidate);
+        const foundUrl = ext === '.gif'
+          ? await probeSingleImage(candidate)
+          : await probeSingleVideo(candidate);
         if (foundUrl) {
           resolvedVideoMap[key] = foundUrl;
           renderExercises();
@@ -1125,7 +1147,7 @@
       updateLightboxView();
     }
 
-    // Полноэкранный чистый просмотрщик видео
+    // Полноэкранный чистый просмотрщик видео и GIF
     let isVideoLightboxOpen = false;
 
     function openVideoLightbox(videoSource, caption) {
@@ -1134,24 +1156,32 @@
 
       const overlay = document.getElementById('videoLightbox');
       const playerEl = document.getElementById('videoLightboxPlayer');
+      const gifEl = document.getElementById('videoLightboxGif');
       const iframeEl = document.getElementById('videoLightboxIframe');
       const captionEl = document.getElementById('videoLightboxCaption');
 
       captionEl.textContent = caption || '';
 
-      if (videoSource.type === 'video') {
-        iframeEl.src = '';
-        iframeEl.classList.add('hidden');
+      playerEl.pause();
+      playerEl.removeAttribute('src');
+      playerEl.load();
+      playerEl.classList.add('hidden');
 
+      gifEl.src = '';
+      gifEl.classList.add('hidden');
+
+      iframeEl.src = '';
+      iframeEl.classList.add('hidden');
+
+      if (videoSource.type === 'video') {
         playerEl.src = videoSource.embedUrl;
         playerEl.classList.remove('hidden');
         playerEl.play().catch(() => {});
+      } else if (videoSource.type === 'gif') {
+        gifEl.src = videoSource.embedUrl;
+        gifEl.alt = caption || '';
+        gifEl.classList.remove('hidden');
       } else {
-        playerEl.pause();
-        playerEl.removeAttribute('src');
-        playerEl.load();
-        playerEl.classList.add('hidden');
-
         iframeEl.src = videoSource.embedUrl;
         iframeEl.classList.remove('hidden');
       }
@@ -1166,12 +1196,16 @@
 
       const overlay = document.getElementById('videoLightbox');
       const playerEl = document.getElementById('videoLightboxPlayer');
+      const gifEl = document.getElementById('videoLightboxGif');
       const iframeEl = document.getElementById('videoLightboxIframe');
 
       playerEl.pause();
       playerEl.removeAttribute('src');
       playerEl.load();
       playerEl.classList.add('hidden');
+
+      gifEl.src = '';
+      gifEl.classList.add('hidden');
 
       iframeEl.src = '';
       iframeEl.classList.add('hidden');
@@ -1180,6 +1214,7 @@
       overlay.classList.remove('flex');
     }
 
+    // Состояние приложения
     let state = {
       activeDay: 'push',
       weeksByDay: { push: 0, pull: 0, legs: 0 },
@@ -1194,6 +1229,7 @@
     let resetWeightConfirmTimer = null;
     let isResetWeightArmed = false;
 
+    // IndexedDB и LocalStorage для надёжного сохранения прогресса
     function openIdb() {
       return new Promise((resolve, reject) => {
         if (!window.indexedDB) return reject(new Error('No IDB'));
@@ -1525,16 +1561,15 @@
           `;
         }).join('');
 
+        // Нейтральная кнопка «Видео» в правом краю строки целевых мышц
         const videoButtonHtml = resolvedVideo
-          ? `<div class="pt-2 flex justify-center">
-               <button
-                 type="button"
-                 data-open-video="${ex.num}"
-                 class="open-video-btn inline-flex items-center px-3.5 py-1.5 rounded-full bg-base-card hover:bg-base-elevated active:scale-95 border border-muted-steelBorder text-[11px] font-medium text-muted-steel transition"
-               >
-                 Видео
-               </button>
-             </div>`
+          ? `<button
+               type="button"
+               data-open-video="${ex.num}"
+               class="open-video-btn shrink-0 px-2 py-0.5 rounded-md bg-base-card hover:bg-base-elevated active:scale-95 border border-base-border text-[10.5px] font-medium text-ink-secondary hover:text-ink-primary transition"
+             >
+               Видео
+             </button>`
           : '';
 
         return `
@@ -1546,7 +1581,6 @@
                 : 'bg-base-card border-base-border'
             }"
           >
-            <!-- Верх карточки: Чекбокс с номером + Название + Кнопка «Техника» -->
             <div class="p-3.5 pb-2.5 flex items-start gap-3">
               <button
                 type="button"
@@ -1591,7 +1625,6 @@
                   </button>
                 </div>
 
-                <!-- Однострочный ряд плашек (Оборудование • Подходы • Время отдыха) -->
                 <div class="flex items-center gap-1 sm:gap-1.5 mt-1.5 overflow-x-auto no-scrollbar">
                   ${equipmentBadgeHtml}
                   <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-lg text-[10.5px] sm:text-[11px] font-medium whitespace-nowrap shrink-0 bg-muted-steelBg text-muted-steel border border-muted-steelBorder">
@@ -1612,7 +1645,6 @@
               </div>
             </div>
 
-            <!-- Блок повторений и управления весом -->
             <div class="px-3.5 pb-3.5 grid grid-cols-12 gap-2 items-stretch">
               <div class="col-span-6 rounded-xl bg-base-bg border border-base-borderSoft px-3 py-2 flex flex-col justify-center">
                 <span class="text-[10px] font-medium uppercase tracking-wider text-ink-secondary">
@@ -1663,18 +1695,19 @@
               </div>
             </div>
 
-            <!-- Сворачиваемый аккордеон техники -->
             <div id="details_${key}" class="accordion-content ${isDetailsOpen ? 'open' : ''}">
               <div class="accordion-inner">
                 <div class="px-3.5 pb-3.5 pt-2.5 text-xs space-y-2 border-t border-base-borderSoft bg-base-bg/65">
-                  <div class="flex items-center gap-1.5 text-[11px]">
-                    <span class="text-ink-secondary">Целевые мышцы:</span>
-                    <span class="font-medium text-muted-steel">${ex.muscles}</span>
+                  <div class="flex items-center justify-between gap-2 text-[11px]">
+                    <div class="min-w-0 leading-snug">
+                      <span class="text-ink-secondary">Целевые мышцы:</span>
+                      <span class="font-medium text-muted-steel">${ex.muscles}</span>
+                    </div>
+                    ${videoButtonHtml}
                   </div>
                   <div class="space-y-1.5 pt-1 border-t border-base-borderSoft/70">
                     ${stepsHtml}
                   </div>
-                  ${videoButtonHtml}
                 </div>
               </div>
             </div>
@@ -2111,9 +2144,10 @@
         }
       }, { passive: true });
 
-      // Лайтбокс видео
+      // Лайтбокс видео и GIF
       const videoLightboxOverlay = document.getElementById('videoLightbox');
       const videoLightboxPlayer = document.getElementById('videoLightboxPlayer');
+      const videoLightboxGif = document.getElementById('videoLightboxGif');
       const videoLightboxIframe = document.getElementById('videoLightboxIframe');
 
       videoLightboxOverlay.addEventListener('click', (e) => {
@@ -2123,6 +2157,10 @@
       });
 
       videoLightboxPlayer.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      videoLightboxGif.addEventListener('click', (e) => {
         e.stopPropagation();
       });
 
