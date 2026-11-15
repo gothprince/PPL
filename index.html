@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Push/Pull/Legs</title>
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <link rel="apple-touch-icon" href="./favicon.png">
+  <link rel="icon" type="image/png" href="./ico/app.png">
+  <link rel="apple-touch-icon" href="./ico/app.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -977,7 +977,7 @@
       const foundUrls = [];
       for (const suffix of MEDIA_SUFFIXES) {
         for (const ext of MEDIA_EXTENSIONS) {
-          const candidate = `${baseName}${suffix}${ext}`;
+          const candidate = `photo/${baseName}${suffix}${ext}`;
           const foundUrl = await probeSingleImage(candidate);
           if (foundUrl) {
             foundUrls.push(foundUrl);
@@ -993,7 +993,7 @@
 
     async function resolveExerciseVideo(key) {
       for (const ext of VIDEO_EXTENSIONS) {
-        const candidate = `${key}${ext}`;
+        const candidate = `video/${key}${ext}`;
         const foundUrl = await probeSingleVideo(candidate);
         if (foundUrl) {
           resolvedVideoMap[key] = foundUrl;
