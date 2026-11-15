@@ -86,15 +86,6 @@
       overflow: hidden;
     }
 
-    /* Скрытие полосы прокрутки для однострочных бейджей */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button {
       -webkit-appearance: none;
@@ -440,7 +431,7 @@
             sets: 4,
             rest: '2.5–3.5 мин',
             muscles: 'Грудь (середина)',
-            videoUrl: '',
+            videoUrl: 'https://d2l9nsnmtah87f.cloudfront.net/exercise-assets/07481201-Smith-Bench-Press_Chest.mp4',
             steps: [
               { label: 'Старт:', text: 'Скамья строго по центру, гриф над серединой груди (линией сосков). Лопатки сведи и прижми к скамье, плечи опусти вниз, стопы плотно в пол. Хват чуть шире плеч, закрытый хват, кисти не заламывай назад.' },
               { label: 'Опускание:', text: 'Плавно за 2 секунды опусти гриф к нижней части груди на вдохе, локти держи под углом ~45° к телу.' },
@@ -825,7 +816,7 @@
       const mod10 = abs % 10;
       if (abs >= 11 && abs <= 19) return `${n} подходов`;
       if (mod10 === 1) return `${n} подход`;
-      if (mod10 >= 2 && mod10 <= 4) return `${n} подхода`;
+      if (mod10 >= 2 && mod10 <= 4) return `${n} подх.`;
       return `${n} подходов`;
     }
 
@@ -1497,11 +1488,11 @@
           ? `<button
                type="button"
                data-open-media="${ex.num}"
-               class="equipment-media-btn inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-lg text-[10.5px] sm:text-[11px] font-medium whitespace-nowrap shrink-0 bg-base-bg text-ink-secondary border border-white/[0.22] hover:border-muted-steelBorder cursor-pointer active:scale-95 transition"
+               class="equipment-media-btn inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-white/[0.22] hover:border-muted-steelBorder cursor-pointer active:scale-95 transition"
              >
                ${ex.equipment}
              </button>`
-          : `<span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-lg text-[10.5px] sm:text-[11px] font-medium whitespace-nowrap shrink-0 bg-base-bg text-ink-secondary border border-base-borderSoft">
+          : `<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-base-borderSoft">
                ${ex.equipment}
              </span>`;
 
@@ -1592,19 +1583,18 @@
                   </button>
                 </div>
 
-                <!-- Однострочный ряд плашек (Оборудование • Подходы • Время отдыха) -->
-                <div class="flex items-center gap-1 sm:gap-1.5 mt-1.5 overflow-x-auto no-scrollbar">
+                <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
                   ${equipmentBadgeHtml}
-                  <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-lg text-[10.5px] sm:text-[11px] font-medium whitespace-nowrap shrink-0 bg-muted-steelBg text-muted-steel border border-muted-steelBorder">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-muted-steelBg text-muted-steel border border-muted-steelBorder">
                     ${formatSetsRu(ex.sets)}
                   </span>
                   <button
                     type="button"
                     data-start-rest="${restSeconds}"
                     title="Запустить таймер отдыха"
-                    class="rest-badge-btn inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg text-[10.5px] sm:text-[11px] font-medium whitespace-nowrap shrink-0 bg-base-bg text-ink-secondary border border-base-borderSoft cursor-pointer active:scale-95 hover:border-muted-steelBorder transition"
+                    class="rest-badge-btn inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-base-bg text-ink-secondary border border-base-borderSoft cursor-pointer active:scale-95 hover:border-muted-steelBorder transition"
                   >
-                    <svg class="w-3 h-3 text-ink-dim shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg class="w-3 h-3 text-ink-dim" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>${ex.rest}</span>
