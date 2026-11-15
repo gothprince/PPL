@@ -380,7 +380,7 @@
     </div>
   </div>
 
-  <!-- Полноэкранный чистый просмотрщик видео и GIF -->
+  <!-- Полноэкранный просмотрщик видео и GIF с каруселью -->
   <div
     id="videoLightbox"
     class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center"
@@ -396,6 +396,17 @@
     >
       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <button
+      id="videoLightboxPrevBtn"
+      type="button"
+      aria-label="Предыдущее видео"
+      class="hidden fixed left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-ink-primary/85 items-center justify-center transition"
+    >
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
       </svg>
     </button>
 
@@ -425,8 +436,24 @@
       allowfullscreen
     ></iframe>
 
+    <button
+      id="videoLightboxNextBtn"
+      type="button"
+      aria-label="Следующее видео"
+      class="hidden fixed right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-ink-primary/85 items-center justify-center transition"
+    >
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+
     <div class="fixed bottom-7 left-0 right-0 px-6 text-center pointer-events-none z-20">
       <div id="videoLightboxCaption" class="text-base sm:text-lg font-semibold text-ink-primary"></div>
+
+      <div id="videoLightboxPagination" class="hidden items-center justify-center gap-2 mt-2">
+        <div id="videoLightboxDots" class="flex items-center gap-1.5"></div>
+        <span id="videoLightboxCounter" class="text-[11px] font-mono text-ink-secondary"></span>
+      </div>
     </div>
   </div>
 
@@ -856,7 +883,7 @@
       return Math.round(isMinutes ? avg * 60 : avg);
     }
 
-    // Определение типа видеоисточника (GIF, MP4/WebM/MOV или iframe)
+    // Определение типа видеоисточника (GIF, MP4/WebM/MOV/OGG или iframe)
     function parseVideoSource(rawUrl) {
       const url = String(rawUrl || '').trim();
       if (!url) return null;
@@ -910,8 +937,9 @@
     const MEDIA_SUFFIXES = ['', '_1', '_2', '_3', '_4', '_5'];
     const resolvedMediaMap = {};
 
-    // Автопоиск видеофайлов и гифок из папки video/
+    // Автопоиск базовых и нумерованных видео/GIF из папки video/ (push_3.mp4, push_3_1.mp4, push_3_2.gif и т.д.)
     const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.gif'];
+    const VIDEO_SUFFIXES = ['', '_1', '_2', '_3', '_4', '_5'];
     const resolvedVideoMap = {};
 
     function getExerciseMediaSpecs(dayId, ex) {
@@ -1012,16 +1040,22 @@
     }
 
     async function resolveExerciseVideo(key) {
-      for (const ext of VIDEO_EXTENSIONS) {
-        const candidate = `video/${key}${ext}`;
-        const foundUrl = ext === '.gif'
-          ? await probeSingleImage(candidate)
-          : await probeSingleVideo(candidate);
-        if (foundUrl) {
-          resolvedVideoMap[key] = foundUrl;
-          renderExercises();
-          return;
+      const foundUrls = [];
+      for (const suffix of VIDEO_SUFFIXES) {
+        for (const ext of VIDEO_EXTENSIONS) {
+          const candidate = `video/${key}${suffix}${ext}`;
+          const foundUrl = ext === '.gif'
+            ? await probeSingleImage(candidate)
+            : await probeSingleVideo(candidate);
+          if (foundUrl) {
+            foundUrls.push(foundUrl);
+            break;
+          }
         }
+      }
+      if (foundUrls.length > 0) {
+        resolvedVideoMap[key] = foundUrls;
+        renderExercises();
       }
     }
 
@@ -1060,11 +1094,33 @@
       return slides;
     }
 
-    function getResolvedExerciseVideo(dayId, ex) {
+    function getResolvedExerciseVideos(dayId, ex) {
       const key = `${dayId}_${ex.num}`;
-      const rawUrl = (resolvedVideoMap[key] || ex.videoUrl || '').trim();
-      if (!rawUrl) return null;
-      return parseVideoSource(rawUrl);
+      const urls = [];
+
+      if (Array.isArray(resolvedVideoMap[key]) && resolvedVideoMap[key].length > 0) {
+        urls.push(...resolvedVideoMap[key]);
+      }
+
+      const manualUrl = String(ex.videoUrl || '').trim();
+      if (manualUrl && !urls.includes(manualUrl)) {
+        urls.push(manualUrl);
+      }
+
+      const parsedItems = [];
+      urls.forEach((url) => {
+        const source = parseVideoSource(url);
+        if (source) {
+          parsedItems.push(source);
+        }
+      });
+
+      return parsedItems.map((source, idx) => ({
+        source,
+        caption: parsedItems.length > 1
+          ? `${ex.name} (${idx + 1}/${parsedItems.length})`
+          : ex.name
+      }));
     }
 
     // Состояние полноэкранного просмотрщика фото
@@ -1147,31 +1203,53 @@
       updateLightboxView();
     }
 
-    // Полноэкранный чистый просмотрщик видео и GIF
-    let isVideoLightboxOpen = false;
+    // Состояние полноэкранного просмотрщика видео и GIF с каруселью
+    let videoLightboxState = {
+      isOpen: false,
+      slides: [],
+      currentIndex: 0
+    };
 
-    function openVideoLightbox(videoSource, caption) {
-      if (!videoSource || !videoSource.embedUrl) return;
-      isVideoLightboxOpen = true;
+    function resetVideoLightboxMedia() {
+      const playerEl = document.getElementById('videoLightboxPlayer');
+      const gifEl = document.getElementById('videoLightboxGif');
+      const iframeEl = document.getElementById('videoLightboxIframe');
 
-      const overlay = document.getElementById('videoLightbox');
+      if (playerEl) {
+        playerEl.pause();
+        playerEl.removeAttribute('src');
+        playerEl.load();
+        playerEl.classList.add('hidden');
+      }
+      if (gifEl) {
+        gifEl.src = '';
+        gifEl.classList.add('hidden');
+      }
+      if (iframeEl) {
+        iframeEl.src = '';
+        iframeEl.classList.add('hidden');
+      }
+    }
+
+    function updateVideoLightboxView() {
+      const { slides, currentIndex } = videoLightboxState;
+      if (!slides.length) return;
+
+      const currentSlide = slides[currentIndex] || slides[0];
+      const videoSource = currentSlide.source;
       const playerEl = document.getElementById('videoLightboxPlayer');
       const gifEl = document.getElementById('videoLightboxGif');
       const iframeEl = document.getElementById('videoLightboxIframe');
       const captionEl = document.getElementById('videoLightboxCaption');
+      const prevBtn = document.getElementById('videoLightboxPrevBtn');
+      const nextBtn = document.getElementById('videoLightboxNextBtn');
+      const paginationEl = document.getElementById('videoLightboxPagination');
+      const dotsEl = document.getElementById('videoLightboxDots');
+      const counterEl = document.getElementById('videoLightboxCounter');
 
-      captionEl.textContent = caption || '';
+      resetVideoLightboxMedia();
 
-      playerEl.pause();
-      playerEl.removeAttribute('src');
-      playerEl.load();
-      playerEl.classList.add('hidden');
-
-      gifEl.src = '';
-      gifEl.classList.add('hidden');
-
-      iframeEl.src = '';
-      iframeEl.classList.add('hidden');
+      captionEl.textContent = currentSlide.caption || '';
 
       if (videoSource.type === 'video') {
         playerEl.src = videoSource.embedUrl;
@@ -1179,39 +1257,70 @@
         playerEl.play().catch(() => {});
       } else if (videoSource.type === 'gif') {
         gifEl.src = videoSource.embedUrl;
-        gifEl.alt = caption || '';
+        gifEl.alt = currentSlide.caption || '';
         gifEl.classList.remove('hidden');
       } else {
         iframeEl.src = videoSource.embedUrl;
         iframeEl.classList.remove('hidden');
       }
 
+      const hasMultiple = slides.length > 1;
+      if (hasMultiple) {
+        prevBtn.classList.remove('hidden');
+        prevBtn.classList.add('flex');
+        nextBtn.classList.remove('hidden');
+        nextBtn.classList.add('flex');
+        paginationEl.classList.remove('hidden');
+        paginationEl.classList.add('flex');
+
+        dotsEl.innerHTML = slides.map((_, idx) => {
+          const isActive = idx === currentIndex;
+          return `<span class="h-1.5 rounded-full transition-all duration-150 ${
+            isActive ? 'w-4 bg-muted-steel' : 'w-1.5 bg-white/30'
+          }"></span>`;
+        }).join('');
+
+        counterEl.textContent = `${currentIndex + 1} / ${slides.length}`;
+      } else {
+        prevBtn.classList.add('hidden');
+        prevBtn.classList.remove('flex');
+        nextBtn.classList.add('hidden');
+        nextBtn.classList.remove('flex');
+        paginationEl.classList.add('hidden');
+        paginationEl.classList.remove('flex');
+      }
+    }
+
+    function openVideoLightbox(slides) {
+      if (!slides || !slides.length) return;
+      videoLightboxState.isOpen = true;
+      videoLightboxState.slides = slides;
+      videoLightboxState.currentIndex = 0;
+
+      const overlay = document.getElementById('videoLightbox');
       overlay.classList.remove('hidden');
       overlay.classList.add('flex');
+      updateVideoLightboxView();
     }
 
     function closeVideoLightbox() {
-      if (!isVideoLightboxOpen) return;
-      isVideoLightboxOpen = false;
+      if (!videoLightboxState.isOpen) return;
+      videoLightboxState.isOpen = false;
+      videoLightboxState.slides = [];
+      videoLightboxState.currentIndex = 0;
+
+      resetVideoLightboxMedia();
 
       const overlay = document.getElementById('videoLightbox');
-      const playerEl = document.getElementById('videoLightboxPlayer');
-      const gifEl = document.getElementById('videoLightboxGif');
-      const iframeEl = document.getElementById('videoLightboxIframe');
-
-      playerEl.pause();
-      playerEl.removeAttribute('src');
-      playerEl.load();
-      playerEl.classList.add('hidden');
-
-      gifEl.src = '';
-      gifEl.classList.add('hidden');
-
-      iframeEl.src = '';
-      iframeEl.classList.add('hidden');
-
       overlay.classList.add('hidden');
       overlay.classList.remove('flex');
+    }
+
+    function stepVideoLightboxSlide(delta) {
+      const len = videoLightboxState.slides.length;
+      if (len <= 1) return;
+      videoLightboxState.currentIndex = (videoLightboxState.currentIndex + delta + len) % len;
+      updateVideoLightboxView();
     }
 
     // Состояние приложения
@@ -1528,7 +1637,8 @@
         const currentReps = ex.weeks[weekIdx] || ex.weeks[0];
         const availableSlides = getResolvedExerciseMedia(day.id, ex);
         const hasMedia = availableSlides.length > 0;
-        const resolvedVideo = getResolvedExerciseVideo(day.id, ex);
+        const resolvedVideos = getResolvedExerciseVideos(day.id, ex);
+        const hasVideos = resolvedVideos.length > 0;
         const restSeconds = parseRestToSeconds(ex.rest);
 
         const equipmentBadgeHtml = hasMedia
@@ -1562,7 +1672,7 @@
         }).join('');
 
         // Нейтральная кнопка «Видео» в правом краю строки целевых мышц
-        const videoButtonHtml = resolvedVideo
+        const videoButtonHtml = hasVideos
           ? `<button
                type="button"
                data-open-video="${ex.num}"
@@ -1735,9 +1845,9 @@
           const exNum = Number(btn.getAttribute('data-open-video'));
           const exercise = day.exercises.find(item => item.num === exNum);
           if (exercise) {
-            const videoSource = getResolvedExerciseVideo(day.id, exercise);
-            if (videoSource) {
-              openVideoLightbox(videoSource, exercise.name);
+            const slides = getResolvedExerciseVideos(day.id, exercise);
+            if (slides.length > 0) {
+              openVideoLightbox(slides);
             }
           }
         });
@@ -2144,7 +2254,7 @@
         }
       }, { passive: true });
 
-      // Лайтбокс видео и GIF
+      // Лайтбокс видео и GIF с каруселью
       const videoLightboxOverlay = document.getElementById('videoLightbox');
       const videoLightboxPlayer = document.getElementById('videoLightboxPlayer');
       const videoLightboxGif = document.getElementById('videoLightboxGif');
@@ -2173,14 +2283,45 @@
         closeVideoLightbox();
       });
 
+      document.getElementById('videoLightboxPrevBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        stepVideoLightboxSlide(-1);
+      });
+
+      document.getElementById('videoLightboxNextBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        stepVideoLightboxSlide(1);
+      });
+
+      let videoTouchStartX = 0;
+      let videoTouchStartY = 0;
+
+      videoLightboxOverlay.addEventListener('touchstart', (e) => {
+        if (!videoLightboxState.isOpen || !e.touches || !e.touches.length) return;
+        videoTouchStartX = e.touches[0].clientX;
+        videoTouchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      videoLightboxOverlay.addEventListener('touchend', (e) => {
+        if (!videoLightboxState.isOpen || !e.changedTouches || !e.changedTouches.length) return;
+        const deltaX = e.changedTouches[0].clientX - videoTouchStartX;
+        const deltaY = e.changedTouches[0].clientY - videoTouchStartY;
+
+        if (Math.abs(deltaX) > 36 && Math.abs(deltaX) > Math.abs(deltaY)) {
+          stepVideoLightboxSlide(deltaX < 0 ? 1 : -1);
+        }
+      }, { passive: true });
+
       document.addEventListener('keydown', (e) => {
         if (lightboxState.isOpen) {
           if (e.key === 'Escape') closeEquipmentLightbox();
           if (e.key === 'ArrowLeft') stepLightboxSlide(-1);
           if (e.key === 'ArrowRight') stepLightboxSlide(1);
         }
-        if (isVideoLightboxOpen && e.key === 'Escape') {
-          closeVideoLightbox();
+        if (videoLightboxState.isOpen) {
+          if (e.key === 'Escape') closeVideoLightbox();
+          if (e.key === 'ArrowLeft') stepVideoLightboxSlide(-1);
+          if (e.key === 'ArrowRight') stepVideoLightboxSlide(1);
         }
       });
 
