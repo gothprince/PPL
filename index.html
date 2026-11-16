@@ -104,6 +104,22 @@
       -webkit-appearance: none;
       margin: 0;
     }
+
+    /* Полное скрытие системных контролов плеера iOS Safari */
+    #videoLightboxPlayer {
+      pointer-events: none !important;
+    }
+    #videoLightboxPlayer::-webkit-media-controls,
+    #videoLightboxPlayer::-webkit-media-controls-enclosure,
+    #videoLightboxPlayer::-webkit-media-controls-panel,
+    #videoLightboxPlayer::-webkit-media-controls-start-playback-button,
+    #videoLightboxPlayer::-webkit-media-controls-play-button,
+    #videoLightboxPlayer::-webkit-media-controls-overlay-play-button {
+      display: none !important;
+      -webkit-appearance: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -413,11 +429,13 @@
     <video
       id="videoLightboxPlayer"
       src=""
-      controls
       playsinline
+      webkit-playsinline
       autoplay
       loop
-      class="hidden max-h-[78vh] max-w-[92vw] rounded-xl shadow-2xl bg-black select-none"
+      muted
+      disablePictureInPicture
+      class="hidden max-h-[78vh] max-w-[92vw] rounded-xl shadow-2xl bg-black select-none pointer-events-none"
     ></video>
 
     <img
@@ -883,6 +901,24 @@
     const LEGACY_STORAGE_KEY = 'ppl_tracker_state_v2';
     const IDB_NAME = 'PPLTrackerDB';
     const IDB_STORE = 'state_store';
+    const MEDIA_CACHE_NAME = 'ppl-media-v1';
+
+    async function cacheMediaUrls(urls) {
+      if (!('caches' in window) || !Array.isArray(urls) || !urls.length) return;
+      try {
+        const cache = await caches.open(MEDIA_CACHE_NAME);
+        for (const relUrl of urls) {
+          const absUrl = new URL(relUrl, window.location.href).href.split('#')[0];
+          const existing = await cache.match(absUrl);
+          if (!existing) {
+            const resp = await fetch(absUrl, { cache: 'no-cache' });
+            if (resp && resp.status === 200) {
+              await cache.put(absUrl, resp);
+            }
+          }
+        }
+      } catch (_) {}
+    }
 
     function formatSetsRu(n) {
       const abs = Math.abs(n) % 100;
@@ -1053,6 +1089,7 @@
       }
       if (foundUrls.length > 0) {
         resolvedMediaMap[baseName] = foundUrls;
+        cacheMediaUrls(foundUrls);
         renderExercises();
       }
     }
@@ -1073,6 +1110,7 @@
       }
       if (foundUrls.length > 0) {
         resolvedVideoMap[key] = foundUrls;
+        cacheMediaUrls(foundUrls);
         renderExercises();
       }
     }
@@ -1260,6 +1298,10 @@
       iframeEl.classList.add('hidden');
 
       if (currentSlide.type === 'video') {
+        playerEl.controls = false;
+        playerEl.removeAttribute('controls');
+        playerEl.muted = true;
+        playerEl.defaultMuted = true;
         playerEl.src = currentSlide.embedUrl;
         playerEl.classList.remove('hidden');
         playerEl.play().catch(() => {});
@@ -2204,8 +2246,16 @@
     }
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && isTimerRunning) {
-        syncTimerTick();
+      if (!document.hidden) {
+        if (isTimerRunning) {
+          syncTimerTick();
+        }
+        if (videoLightboxState.isOpen) {
+          const playerEl = document.getElementById('videoLightboxPlayer');
+          if (playerEl && !playerEl.classList.contains('hidden')) {
+            playerEl.play().catch(() => {});
+          }
+        }
       }
     });
 
@@ -2226,6 +2276,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./save.js').catch(() => {});
+      }
+
       await initStorage();
       renderAll();
       probeAllEquipmentMedia();
