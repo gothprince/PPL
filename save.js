@@ -1,4 +1,4 @@
-const APP_CACHE = 'ppl-app-v2';
+const APP_CACHE = 'ppl-app-v3';
 const MEDIA_CACHE = 'ppl-media-v1';
 
 const APP_ASSETS = [

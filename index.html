@@ -1077,22 +1077,28 @@
         name: hevyItem.ru || hevyItem.name,
         enName: hevyItem.name,
         equipment: hevyItem.equipRu || baseEx.equipment,
-        muscles: hevyItem.muscleRu || baseEx.muscles,
+        muscles: hevyItem.muscles || hevyItem.muscleRu || baseEx.muscles,
         grips: Array.isArray(hevyItem.grips) ? hevyItem.grips : [],
-        steps: [
-          {
-            label: 'Ориентир Hevy:',
-            text: `${hevyItem.name} (${hevyItem.muscleRu} • ${hevyItem.equipRu}).`
-          },
-          {
-            label: 'Выполнение:',
-            text: 'Сохраняй плавную негативную фазу 2 секунды, контролируй целевую мышцу без инерции и читинга корпусом.'
-          },
-          {
-            label: 'Ошибка / Фишка:',
-            text: `Замена для упражнения «${baseEx.name}» по схеме подходов и повторений текущей недели.`
-          }
-        ]
+        steps: Array.isArray(hevyItem.steps) && hevyItem.steps.length > 0
+          ? hevyItem.steps
+          : [
+              {
+                label: 'Старт:',
+                text: `Займи устойчивое исходное положение (${hevyItem.equipRu}), сведи лопатки и стабилизируй корпус.`
+              },
+              {
+                label: 'Выполнение:',
+                text: 'Выполни рабочую фазу движения подконтрольно на выдохе с акцентом на целевую мышечную группу.'
+              },
+              {
+                label: 'Возврат:',
+                text: 'На вдохе плавно вернись в стартовую позицию за 2 секунды без рывков и расслабления в нижней точке.'
+              },
+              {
+                label: 'Ошибка / Фишка:',
+                text: 'Не помогай инерцией корпуса и сохраняй полную амплитуду под контролем.'
+              }
+            ]
       };
     }
 
