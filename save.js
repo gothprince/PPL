@@ -1,119 +1,112 @@
-const SHELL_CACHE = 'ppl-shell-v1';
+const APP_CACHE = 'ppl-app-v2';
 const MEDIA_CACHE = 'ppl-media-v1';
 
+const APP_ASSETS = [
+  './',
+  './index.html',
+  './exercises.js',
+  './ico/app.png'
+];
+
+// Установка Service Worker и кэширование файлов приложения и базы упражнений
 self.addEventListener('install', (event) => {
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(APP_CACHE).then((cache) => cache.addAll(APP_ASSETS))
+  );
 });
 
+// Активация: удаляем устаревшие кэши приложения, но сохраняем кэш видео и фото (ppl-media-v1)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== SHELL_CACHE && key !== MEDIA_CACHE)
+          .filter((key) => key !== APP_CACHE && key !== MEDIA_CACHE)
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
   );
 });
 
-function isMediaAsset(url) {
-  return (
-    /\/(video|photo|ico)\//i.test(url.pathname) ||
-    /\.(mp4|webm|mov|ogg|gif|webp|jpg|jpeg|png)$/i.test(url.pathname)
-  );
-}
+// Корректная отдача закэшированных видео по Range-запросам (критично для iOS Safari офлайн)
+async function handleRangeRequest(request) {
+  const cachedResponse = await caches.match(request.url);
+  if (!cachedResponse) {
+    return fetch(request);
+  }
 
-async function buildRangeResponse(request, fullResponse) {
-  const rangeHeader = request.headers.get('range');
-  if (!rangeHeader) return fullResponse;
-
-  const buf = await fullResponse.arrayBuffer();
-  const total = buf.byteLength;
-  const match = /bytes=(\d+)-(\d*)/i.exec(rangeHeader);
+  const arrayBuffer = await cachedResponse.arrayBuffer();
+  const totalBytes = arrayBuffer.byteLength;
+  const rangeHeader = request.headers.get('range') || '';
+  const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
 
   if (!match) {
-    return new Response(buf, {
+    return new Response(arrayBuffer, {
       status: 200,
-      headers: fullResponse.headers
+      headers: {
+        'Content-Type': cachedResponse.headers.get('Content-Type') || 'video/mp4',
+        'Content-Length': String(totalBytes),
+        'Accept-Ranges': 'bytes'
+      }
     });
   }
 
   const start = Number(match[1]);
-  const end = match[2] ? Math.min(Number(match[2]), total - 1) : total - 1;
+  const end = match[2] ? Math.min(Number(match[2]), totalBytes - 1) : totalBytes - 1;
 
-  if (start >= total || start > end) {
+  if (start >= totalBytes || start > end) {
     return new Response(null, {
       status: 416,
-      statusText: 'Range Not Satisfiable',
       headers: {
-        'Content-Range': `bytes */${total}`
+        'Content-Range': `bytes */${totalBytes}`
       }
     });
   }
 
-  const sliced = buf.slice(start, end + 1);
-  const headers = new Headers(fullResponse.headers);
-  headers.set('Content-Range', `bytes ${start}-${end}/${total}`);
-  headers.set('Accept-Ranges', 'bytes');
-  headers.set('Content-Length', String(sliced.byteLength));
-
+  const sliced = arrayBuffer.slice(start, end + 1);
   return new Response(sliced, {
     status: 206,
     statusText: 'Partial Content',
-    headers
+    headers: {
+      'Content-Type': cachedResponse.headers.get('Content-Type') || 'video/mp4',
+      'Content-Range': `bytes ${start}-${end}/${totalBytes}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': String(sliced.byteLength)
+    }
   });
 }
 
-async function handleMediaRequest(request) {
-  const cache = await caches.open(MEDIA_CACHE);
-  const cleanUrl = request.url.split('#')[0];
-  let cached = await cache.match(cleanUrl);
-
-  if (!cached) {
-    try {
-      const fresh = await fetch(cleanUrl, { cache: 'no-cache' });
-      if (fresh && fresh.status === 200) {
-        await cache.put(cleanUrl, fresh.clone());
-        cached = fresh;
-      } else if (fresh) {
-        return fresh;
-      }
-    } catch (_) {
-      return Response.error();
-    }
-  }
-
-  if (!cached) return Response.error();
-  return buildRangeResponse(request, cached);
-}
-
-async function handleNavigationRequest(request) {
-  const cache = await caches.open(SHELL_CACHE);
-  try {
-    const fresh = await fetch(request);
-    if (fresh && fresh.status === 200) {
-      await cache.put(request, fresh.clone());
-    }
-    return fresh;
-  } catch (_) {
-    const cached = await cache.match(request);
-    return cached || Response.error();
-  }
-}
-
+// Перехват сетевых запросов (Cache-First с фоновым сохранением)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
-
-  if (isMediaAsset(url)) {
-    event.respondWith(handleMediaRequest(event.request));
+  if (event.request.headers.has('range')) {
+    event.respondWith(handleRangeRequest(event.request));
     return;
   }
 
-  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
-    event.respondWith(handleNavigationRequest(event.request));
-  }
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(event.request).then((response) => {
+        if (!response || response.status !== 200) {
+          return response;
+        }
+        const reqUrl = new URL(event.request.url);
+        const isSameOrigin = reqUrl.origin === self.location.origin;
+        const isFontOrTailwind =
+          reqUrl.hostname.includes('tailwindcss.com') ||
+          reqUrl.hostname.includes('googleapis.com') ||
+          reqUrl.hostname.includes('gstatic.com');
+
+        if (isSameOrigin || isFontOrTailwind) {
+          const clone = response.clone();
+          caches.open(APP_CACHE).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      });
+    })
+  );
 });
