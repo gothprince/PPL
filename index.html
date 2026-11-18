@@ -1367,8 +1367,6 @@
     const MEDIA_SUFFIXES = ['', '_1', '_2', '_3'];
     const resolvedMediaMap = {};
 
-    const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.gif'];
-    const VIDEO_SUFFIXES = ['', '_1', '_2', '_3'];
     const resolvedVideoMap = {};
     const probingVideoSet = new Set();
 
@@ -1424,57 +1422,15 @@
 
     function getExerciseMediaSpecs(ex) {
       const id = ex.activeHevyId || ex.hevyId || '';
-      if (id === 'leg_extension_machine' || id === 'single_leg_extensions') {
-        return [{ key: 'leg_ext', label: 'Разгибания ног сидя' }];
-      }
-      if (id.includes('leg_curl')) {
-        return [{ key: 'leg_curl', label: 'Сгибания ног' }];
-      }
-      if (id === 'butterfly_pec_deck' || id === 'chest_fly_machine') {
-        return [{ key: 'pecdeck', label: 'Pec Deck («Бабочка»)' }];
-      }
-      if (id.includes('crossover') || id.includes('chest_fly')) {
-        return [{ key: 'crossover', label: 'Кроссовер' }];
-      }
-      if (id.includes('shoulder_press_machine')) {
-        return [
-          { key: 'hammer_shoulder', label: 'Тренажёр на плечи' },
-          { key: 'hammer', label: 'Тренажёр Хаммер' }
-        ];
-      }
-      if (id.includes('lat_pulldown')) {
-        return [{ key: 'cable_high', label: 'Верхний блок' }];
-      }
-      if (id.includes('seated_cable_row')) {
-        return [{ key: 'cable_row', label: 'Горизонтальный блок' }];
-      }
-      if (id.includes('iso_lateral') || id.includes('seated_row_machine')) {
-        return [
-          { key: 'hammer_row', label: 'Рычажная тяга' },
-          { key: 'hammer', label: 'Тренажёр Хаммер' }
-        ];
-      }
-      if (id.includes('preacher_curl')) {
-        return [{ key: 'scott', label: 'Скамья Скотта' }];
-      }
-      if (id.includes('leg_press')) {
-        return [{ key: 'leg_press', label: 'Платформа (жим ногами)' }];
-      }
-      if (id.includes('calf_raise')) {
-        return [
-          { key: 'calf_machine', label: 'Тренажёр на голень' },
-          { key: 'smith', label: 'Машина Смита' }
-        ];
-      }
-
-      switch (ex.equipment) {
-        case 'Машина Смита':
-          return [{ key: 'smith', label: 'Машина Смита' }];
-        case 'Блок':
-          return [{ key: 'cable_low', label: 'Блок' }];
-        default:
-          return [];
-      }
+      const hevyItem = HEVY_MAP[id];
+      const photos = hevyItem && Array.isArray(hevyItem.photos) ? hevyItem.photos : [];
+      return photos.map(photo => {
+        const entry = typeof photo === 'string' ? { path: photo } : photo;
+        return {
+          key: entry.path,
+          label: entry.label || hevyItem.ru || ex.name || ex.equipment || 'Оборудование'
+        };
+      }).filter(spec => !!spec.key);
     }
 
     function probeSingleImage(url) {
@@ -1519,7 +1475,17 @@
     }
 
     async function resolveBaseMedia(baseName, shouldRender = true) {
-      if (Array.isArray(resolvedMediaMap[baseName]) && resolvedMediaMap[baseName].length > 0) {
+      if (Array.isArray(resolvedMediaMap[baseName])) {
+        return;
+      }
+      // Точные пути фото упражнений берём из exercises.js; подбор по имени остаётся только для фото рукоятей.
+      if (String(baseName).startsWith('photo/')) {
+        const foundUrl = await checkAssetExists(baseName, 'image');
+        resolvedMediaMap[baseName] = foundUrl ? [foundUrl] : [];
+        if (foundUrl) {
+          cacheMediaUrls([foundUrl]);
+          if (shouldRender) renderExercises();
+        }
         return;
       }
       const foundUrls = [];
@@ -1549,30 +1515,22 @@
     }
 
     async function resolveExerciseVideo(hevyId, shouldRender = true) {
-      if (!hevyId) return;
-      if (Array.isArray(resolvedVideoMap[hevyId]) && resolvedVideoMap[hevyId].length > 0) return;
+      if (!hevyId || Array.isArray(resolvedVideoMap[hevyId])) return;
       if (probingVideoSet.has(hevyId)) return;
+
+      const hevyItem = HEVY_MAP[hevyId];
+      const videoPaths = hevyItem && Array.isArray(hevyItem.videos) ? hevyItem.videos : [];
+      if (!videoPaths.length) {
+        resolvedVideoMap[hevyId] = [];
+        return;
+      }
+
       probingVideoSet.add(hevyId);
       const foundUrls = [];
       try {
-        for (const suffix of VIDEO_SUFFIXES) {
-          let foundInSuffix = false;
-          for (const ext of VIDEO_EXTENSIONS) {
-            const candidate = `video/${hevyId}${suffix}${ext}`;
-            const foundUrl = await checkAssetExists(candidate, ext === '.gif' ? 'image' : 'video');
-            if (foundUrl) {
-              foundUrls.push(foundUrl);
-              foundInSuffix = true;
-              // Сразу показываем кнопку «Видео», не дожидаясь проверки _1/_2/_3
-              if (suffix === '' && shouldRender) {
-                resolvedVideoMap[hevyId] = [...foundUrls];
-                renderExercises();
-              }
-              break;
-            }
-          }
-          // Если нет _1, дальше _2 и _3 не проверяем
-          if (suffix !== '' && !foundInSuffix) break;
+        for (const candidate of videoPaths) {
+          const foundUrl = await checkAssetExists(candidate, 'video');
+          if (foundUrl) foundUrls.push(foundUrl);
         }
         resolvedVideoMap[hevyId] = foundUrls;
         if (foundUrls.length > 0) {
