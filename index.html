@@ -1506,17 +1506,40 @@
       });
     }
 
+    // Быстрая проверка существования файла через HEAD без создания тяжёлых <video>-плееров
+    async function checkAssetExists(url, kind = 'video') {
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        try {
+          const resp = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+          if (resp.ok) return url;
+          if (resp.status === 404) return null;
+        } catch (_) {}
+      }
+      return kind === 'image' ? probeSingleImage(url) : probeSingleVideo(url);
+    }
+
     async function resolveBaseMedia(baseName, shouldRender = true) {
+      if (Array.isArray(resolvedMediaMap[baseName]) && resolvedMediaMap[baseName].length > 0) {
+        return;
+      }
       const foundUrls = [];
       for (const suffix of MEDIA_SUFFIXES) {
+        let foundInSuffix = false;
         for (const ext of MEDIA_EXTENSIONS) {
           const candidate = `photo/${baseName}${suffix}${ext}`;
-          const foundUrl = await probeSingleImage(candidate);
+          const foundUrl = await checkAssetExists(candidate, 'image');
           if (foundUrl) {
             foundUrls.push(foundUrl);
+            foundInSuffix = true;
+            if (suffix === '' && shouldRender) {
+              resolvedMediaMap[baseName] = [...foundUrls];
+              renderExercises();
+            }
             break;
           }
         }
+        // Если нет _1, дальше _2 и _3 не проверяем
+        if (suffix !== '' && !foundInSuffix) break;
       }
       resolvedMediaMap[baseName] = foundUrls;
       if (foundUrls.length > 0) {
@@ -1526,21 +1549,30 @@
     }
 
     async function resolveExerciseVideo(hevyId, shouldRender = true) {
-      if (!hevyId || probingVideoSet.has(hevyId)) return;
+      if (!hevyId) return;
+      if (Array.isArray(resolvedVideoMap[hevyId]) && resolvedVideoMap[hevyId].length > 0) return;
+      if (probingVideoSet.has(hevyId)) return;
       probingVideoSet.add(hevyId);
       const foundUrls = [];
       try {
         for (const suffix of VIDEO_SUFFIXES) {
+          let foundInSuffix = false;
           for (const ext of VIDEO_EXTENSIONS) {
             const candidate = `video/${hevyId}${suffix}${ext}`;
-            const foundUrl = ext === '.gif'
-              ? await probeSingleImage(candidate)
-              : await probeSingleVideo(candidate);
+            const foundUrl = await checkAssetExists(candidate, ext === '.gif' ? 'image' : 'video');
             if (foundUrl) {
               foundUrls.push(foundUrl);
+              foundInSuffix = true;
+              // Сразу показываем кнопку «Видео», не дожидаясь проверки _1/_2/_3
+              if (suffix === '' && shouldRender) {
+                resolvedVideoMap[hevyId] = [...foundUrls];
+                renderExercises();
+              }
               break;
             }
           }
+          // Если нет _1, дальше _2 и _3 не проверяем
+          if (suffix !== '' && !foundInSuffix) break;
         }
         resolvedVideoMap[hevyId] = foundUrls;
         if (foundUrls.length > 0) {
@@ -1553,23 +1585,59 @@
     }
 
     function probeAllEquipmentMedia() {
-      const uniqueKeys = new Set(Object.values(GRIP_PHOTO_MAP));
+      // 1. Сначала проверяем фото оборудования активных упражнений и рукоятей
+      const activeDayObj = PROGRAM_DATA[state.activeDay];
+      const priorityPhotoKeys = new Set();
+      const allPhotoKeys = new Set(Object.values(GRIP_PHOTO_MAP));
+
+      if (activeDayObj) {
+        activeDayObj.exercises.forEach(ex => {
+          const eff = getEffectiveExercise(activeDayObj.id, ex);
+          getExerciseMediaSpecs(eff).forEach(spec => {
+            if (spec.key) {
+              priorityPhotoKeys.add(spec.key);
+              allPhotoKeys.add(spec.key);
+            }
+          });
+        });
+      }
+
       Object.entries(PROGRAM_DATA).forEach(([dayId, day]) => {
         day.exercises.forEach(ex => {
           const eff = getEffectiveExercise(dayId, ex);
           getExerciseMediaSpecs(eff).forEach(spec => {
-            if (spec.key) uniqueKeys.add(spec.key);
+            if (spec.key) allPhotoKeys.add(spec.key);
           });
         });
       });
 
-      uniqueKeys.forEach(baseName => {
-        resolveBaseMedia(baseName, true);
+      priorityPhotoKeys.forEach(k => resolveBaseMedia(k, true));
+      allPhotoKeys.forEach(k => {
+        if (!priorityPhotoKeys.has(k)) resolveBaseMedia(k, true);
       });
 
-      const videoIds = collectRelevantHevyIds();
-      videoIds.forEach(hevyId => {
-        resolveExerciseVideo(hevyId, true);
+      // 2. Сначала проверяем видео активного дня, затем остальных 2 дней программы (без спама 1500 запросов)
+      const priorityVideoIds = new Set();
+      const programVideoIds = new Set();
+
+      if (activeDayObj) {
+        activeDayObj.exercises.forEach(ex => {
+          const eff = getEffectiveExercise(activeDayObj.id, ex);
+          priorityVideoIds.add(eff.activeHevyId);
+          programVideoIds.add(eff.activeHevyId);
+        });
+      }
+
+      Object.entries(PROGRAM_DATA).forEach(([dayId, day]) => {
+        day.exercises.forEach(ex => {
+          const eff = getEffectiveExercise(dayId, ex);
+          programVideoIds.add(eff.activeHevyId);
+        });
+      });
+
+      priorityVideoIds.forEach(id => resolveExerciseVideo(id, true));
+      programVideoIds.forEach(id => {
+        if (!priorityVideoIds.has(id)) resolveExerciseVideo(id, true);
       });
     }
 
@@ -2456,7 +2524,7 @@
                       >
                         Вернуть оригинал
                       </button>
-                    ` : `<span class="text-[10.5px] text-ink-dim">База Hevy (450 упр.)</span>`}
+                    ` : `<span class="text-[10.5px] text-ink-dim">База Hevy (451 упр.)</span>`}
                   </div>
 
                   <input
@@ -2600,7 +2668,37 @@
         });
       });
 
-      // Поиск по базе 450 упражнений Hevy
+      function bindAltListEvents(listContainer, slotKey, baseEx) {
+        if (!listContainer) return;
+        listContainer.querySelectorAll('.preview-alt-video-btn').forEach(b => {
+          b.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const targetId = b.getAttribute('data-preview-video');
+            const item = HEVY_MAP[targetId];
+            if (item) {
+              const slides = getResolvedExerciseVideosById(item.id, item.ru || item.name);
+              if (slides.length > 0) openVideoLightbox(slides);
+            }
+          });
+        });
+        listContainer.querySelectorAll('.apply-swap-btn').forEach(b => {
+          b.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const tId = b.getAttribute('data-target-id');
+            if (baseEx.hevyId === tId) delete state.swaps[slotKey];
+            else state.swaps[slotKey] = tId;
+            state.openAlts[slotKey] = false;
+            state.altSearchQueries[slotKey] = '';
+            saveState();
+            resolveExerciseVideo(tId, true);
+            renderExercises();
+            const chosen = HEVY_MAP[tId];
+            showToast(chosen ? `Выбрано: ${chosen.ru}` : 'Упражнение заменено');
+          });
+        });
+      }
+
+      // Поиск по базе 451 упражнения Hevy
       listEl.querySelectorAll('.search-input').forEach(input => {
         input.addEventListener('input', (e) => {
           const slotKey = input.getAttribute('data-search-slot');
@@ -2612,26 +2710,20 @@
             const listContainer = document.getElementById(`alt_list_${slotKey}`);
             if (listContainer) {
               listContainer.innerHTML = renderAltResultsHtml(slotKey, baseEx, effEx);
-              // Пробуем подгрузить видео для найденных в поиске
+              bindAltListEvents(listContainer, slotKey, baseEx);
+              // Подгружаем видео для найденных в поиске и обновляем список, если видео нашлось
               searchHevyCatalog(e.target.value, effEx.activeHevyId).forEach(item => {
                 if (!resolvedVideoMap[item.id]) {
-                  resolveExerciseVideo(item.id, false);
+                  resolveExerciseVideo(item.id, false).then(() => {
+                    if (Array.isArray(resolvedVideoMap[item.id]) && resolvedVideoMap[item.id].length > 0) {
+                      const freshContainer = document.getElementById(`alt_list_${slotKey}`);
+                      if (freshContainer && state.altSearchQueries[slotKey] === e.target.value) {
+                        freshContainer.innerHTML = renderAltResultsHtml(slotKey, baseEx, getEffectiveExercise(day.id, baseEx));
+                        bindAltListEvents(freshContainer, slotKey, baseEx);
+                      }
+                    }
+                  });
                 }
-              });
-              // Перепривязываем кнопки внутри обновлённого списка
-              listContainer.querySelectorAll('.apply-swap-btn').forEach(b => {
-                b.addEventListener('click', () => {
-                  const tId = b.getAttribute('data-target-id');
-                  if (baseEx.hevyId === tId) delete state.swaps[slotKey];
-                  else state.swaps[slotKey] = tId;
-                  state.openAlts[slotKey] = false;
-                  state.altSearchQueries[slotKey] = '';
-                  saveState();
-                  resolveExerciseVideo(tId, true);
-                  renderExercises();
-                  const chosen = HEVY_MAP[tId];
-                  showToast(chosen ? `Выбрано: ${chosen.ru}` : 'Упражнение заменено');
-                });
               });
             }
           }
@@ -2692,8 +2784,16 @@
         btn.addEventListener('click', () => {
           const key = btn.getAttribute('data-toggle-alts');
           state.openAlts[key] = !state.openAlts[key];
-          if (state.openAlts[key] && state.openDetails[key]) {
-            state.openDetails[key] = false;
+          if (state.openAlts[key]) {
+            if (state.openDetails[key]) state.openDetails[key] = false;
+            const baseNum = Number(key.split('_')[1]);
+            const baseEx = day.exercises.find(x => x.num === baseNum);
+            if (baseEx) {
+              const effEx = getEffectiveExercise(day.id, baseEx);
+              getAlternativesForExercise(effEx.activeHevyId, baseEx.hevyId).forEach(alt => {
+                resolveExerciseVideo(alt.id, true);
+              });
+            }
           }
           renderExercises();
         });
